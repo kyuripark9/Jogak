@@ -14,6 +14,12 @@ const SEW_TOLERANCE_CSS = 22;
 const LONG_PRESS_MS = 420;
 const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 
+/** Canvas pixels for a canvas's current CSS width: sharp on high-density screens, capped so phones keep memory */
+export function sharpWidth(canvas: HTMLCanvasElement, fallback = 720) {
+  const css = Math.min(720, canvas.clientWidth || fallback);
+  return Math.min(2048, Math.round(css * Math.min(2, devicePixelRatio || 1)));
+}
+
 export interface StageEvents {
   onSewn?: (seam: number, sewing: Sewing) => void;
   onChange?: (sewing: Sewing) => void;
@@ -33,6 +39,14 @@ export class QuiltStage {
   mode: 'wall' | 'light' = 'wall';
   private light: Pt = [300, 250];
   private lightTarget: Pt = [300, 250];
+  /** Rotating a phone or resizing the window redraws at the new size, so threads stay crisp instead of stretched */
+  private resize = new ResizeObserver(() => {
+    const w = sharpWidth(this.canvas, 0);
+    if (w > 0 && Math.abs(w - this.pixelWidth) > 8) {
+      this.pixelWidth = w;
+      this.schedule();
+    }
+  });
 
   constructor(canvas: HTMLCanvasElement, q: Quilt, pixelWidth: number, events: StageEvents = {}, sewing?: Sewing) {
     this.canvas = canvas;
@@ -48,11 +62,13 @@ export class QuiltStage {
     canvas.addEventListener('pointercancel', this.up);
     canvas.addEventListener('pointerleave', this.leave);
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    this.resize.observe(canvas);
     this.draw();
   }
 
   destroy() {
     cancelAnimationFrame(this.raf);
+    this.resize.disconnect();
     this.canvas.removeEventListener('pointerdown', this.down);
     this.canvas.removeEventListener('pointermove', this.move);
     this.canvas.removeEventListener('pointerup', this.up);

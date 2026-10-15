@@ -98,3 +98,37 @@ test('in light mode, multiplying pre-rendered fabric layers matches a fresh redr
   expect(diff.mean).toBeLessThan(0.6);
   expect(diff.worst).toBeLessThan(6);
 });
+
+test('your stitches are still there when you come back, and can be unpicked', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'mouse drag');
+  await page.setViewportSize({ width: 1280, height: 1600 });
+  await page.goto('/');
+  await page.waitForSelector('body[data-state="done"]');
+  await page.locator('#canvas').evaluate((c) => c.scrollIntoView({ block: 'start' }));
+  const before = Number(await page.locator('body').getAttribute('data-sewn'));
+  await expect(page.locator('#unpick')).toBeHidden();
+  const [s] = await open(page);
+  await drag(page, s.a, s.b);
+  await expect(page.locator('body')).toHaveAttribute('data-sewn', String(before + 1));
+  await expect(page.locator('#unpick')).toBeVisible();
+  await page.waitForTimeout(500);
+
+  await page.reload();
+  await page.waitForSelector('body[data-state="done"]');
+  await expect(page.locator('body')).toHaveAttribute('data-sewn', String(before + 1));
+
+  await page.click('#unpick');
+  await page.waitForSelector('body[data-state="done"]');
+  await expect(page.locator('body')).toHaveAttribute('data-sewn', String(before));
+  await expect(page.locator('#unpick')).toBeHidden();
+});
+
+test('resizing the window redraws the canvas at the new size', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'one viewport change is enough');
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/');
+  await page.waitForSelector('body[data-state="done"]');
+  const wide = await page.locator('#canvas').evaluate((c: HTMLCanvasElement) => c.width);
+  await page.setViewportSize({ width: 400, height: 900 });
+  await expect.poll(() => page.locator('#canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBeLessThan(wide - 100);
+});

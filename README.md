@@ -12,6 +12,7 @@ npm run fixtures   # build synthetic capture PNGs/PDFs (fixtures/out)
 npm run demo-photos # regenerate the sample photos for the demo (public/demo)
 npm run e2e        # upload files in a browser and check the results
 npm run perf       # time the first screen, drawing, and saving
+npm run og         # regenerate the link preview image (public/og.png)
 npm run build      # static site in dist/
 ```
 
@@ -41,3 +42,4 @@ Cloth names: mosi (ramie), sambe (hemp), myeongju (silk). Hanji is Korean mulber
 - Stage 4 light mode, PNG export, demo: [docs/stage-4-light-export-demo.md](docs/stage-4-light-export-demo.md)
 - Stage 5 polish and performance (measured numbers): [docs/stage-5-polish-performance.md](docs/stage-5-polish-performance.md)
 - Stage 6, English site and album photos with EXIF date and place: [docs/stage-6-english-album.md](docs/stage-6-english-album.md)
+- Stage 7, publishing to GitHub Pages, link preview, saved progress: [docs/stage-7-publish.md](docs/stage-7-publish.md)

@@ -13,7 +13,8 @@
     "fixtures": "node --experimental-strip-types scripts/make-fixtures.ts",
     "demo-photos": "node --experimental-strip-types scripts/make-demo.ts",
     "e2e": "playwright test",
-    "perf": "playwright test --config perf/playwright.perf.ts"
+    "perf": "playwright test --config perf/playwright.perf.ts",
+    "og": "node --experimental-strip-types scripts/make-og.ts"
   },
   "repository": {
     "type": "git",

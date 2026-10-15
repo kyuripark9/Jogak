@@ -6,7 +6,7 @@ import { sampleAlbum } from '../synth/album.ts';
 import { buildProfile, longCapture } from '../synth/profile.ts';
 import { FABRIC_NAMES } from '../color/extract.ts';
 import { buildQuilt, type Quilt } from './build.ts';
-import { QuiltStage } from '../interaction/stage.ts';
+import { QuiltStage, sharpWidth } from '../interaction/stage.ts';
 import { finishedView } from '../render/quilt.ts';
 import { bindControls } from '../app/controls.ts';
 import { weaveTile } from '../render/fabric.ts';
@@ -71,12 +71,11 @@ function sew() {
   const q = buildQuilt(thumbs, seed, keys);
   const canvas = $<HTMLCanvasElement>('#canvas');
   $('#quilt').hidden = false;
-  const cssW = Math.min(720, canvas.clientWidth || 720);
   stage?.destroy();
   stage = new QuiltStage(
     canvas,
     q,
-    Math.min(2048, Math.round(cssW * Math.min(2, devicePixelRatio || 1))),
+    sharpWidth(canvas),
     { onSewn: (_, sw) => { updateSewStatus(sw); syncControls(); }, onChange: (sw) => updateSewStatus(sw) },
     startSewn ? finishedView(q).sewing : undefined,
   );

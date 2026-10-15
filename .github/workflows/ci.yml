@@ -1,8 +1,6 @@
-# Every push and pull request: typecheck, unit tests, and a production build
+# Every pull request: unit tests and a production build (which typechecks). main is checked by pages.yml
 name: CI
 on:
-  push:
-    branches-ignore: [main]
   pull_request:
 jobs:
   check:
