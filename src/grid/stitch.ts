@@ -96,7 +96,7 @@ export function stitch(sources: GridRow[][], edges: SourceEdges[] = []): StitchR
     if (contained >= 0) {
       next.forEach((r, t) => duplicates.set(key(r), ref(rows[contained + t])));
       join.overlapRows = next.length;
-      join.warning = '앞 캡처에 이미 모두 들어 있는 화면이에요.';
+      join.warning = 'This screenshot is already fully covered by the previous one.';
     } else {
       for (let t = 0; t < overlap; t++) duplicates.set(key(next[t]), ref(rows[rows.length - overlap + t]));
       const last = rows[rows.length - 1];
@@ -107,7 +107,7 @@ export function stitch(sources: GridRow[][], edges: SourceEdges[] = []): StitchR
       ) {
         join.continuedByPartial = true;
       } else if (overlap === 0) {
-        join.warning = '앞 캡처와 겹치는 줄이 없어요. 사이에 빠진 줄이 있을 수 있으니 조금씩 겹치게 찍어 주세요.';
+        join.warning = 'No rows overlap the previous screenshot, so some rows may be missing. Take screenshots that overlap a little.';
       }
       rows.push(...next.slice(overlap));
     }

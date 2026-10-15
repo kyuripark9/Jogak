@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>조각 · 캡처 자르기 확인</title>
+    <title>Jogak · Grid slicing check</title>
     <meta name="theme-color" content="#f3eee3" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/src/app/base.css" />
@@ -11,21 +11,21 @@
   </head>
   <body>
     <main class="page" id="app">
-      <h1>캡처 자르기 확인 <span>조각 · 1단계</span></h1>
+      <h1>Grid slicing check <span>Jogak · Stage 1</span></h1>
       <p class="lede">
-        인스타그램 프로필 캡처를 올리면 칸 사이 여백선을 찾아 게시물을 한 칸씩 잘라 냅니다.
-        사진은 이 브라우저 안에서만 읽고 어디로도 보내지 않아요.
+        Upload screenshots of an Instagram profile. Jogak finds the gutters between cells and cuts out each post.
+        Images are read only inside this browser and are never sent anywhere.
       </p>
 
       <section class="intake" id="drop">
         <label class="pick">
           <input id="files" type="file" multiple accept="image/*,application/pdf,.pdf" />
-          <span>캡처 올리기</span>
+          <span>Upload screenshots</span>
         </label>
-        <p class="hint">스크린샷 여러 장 · 스크롤 캡처 긴 이미지 · 사파리 전체 페이지 PDF</p>
+        <p class="hint">Several screenshots · one long scrolling capture · Safari full-page PDF</p>
         <div class="samples">
-          <button type="button" data-sample="shots">예시: 스크린샷 5장 (4:5 칸)</button>
-          <button type="button" data-sample="long">예시: 긴 스크롤 캡처 (3:4 칸, 다크 모드)</button>
+          <button type="button" data-sample="shots">Sample: 5 screenshots (4:5 cells)</button>
+          <button type="button" data-sample="long">Sample: long scrolling capture (3:4 cells, dark mode)</button>
         </div>
       </section>
 

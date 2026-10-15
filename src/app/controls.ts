@@ -9,11 +9,11 @@ import { download, exportName, exportPng } from '../render/export.ts';
  */
 export function bindControls(stage: QuiltStage, q: Quilt, lightBtn: HTMLButtonElement, saveBtn: HTMLButtonElement) {
   const sync = () => {
-    lightBtn.textContent = stage.mode === 'light' ? '벽에 걸기' : '창에 걸어 빛에 비춰 보기';
+    lightBtn.textContent = stage.mode === 'light' ? 'Hang it on the wall' : 'Hold it up to the window light';
     lightBtn.setAttribute('aria-pressed', String(stage.mode === 'light'));
     const done = stage.sewing.done;
     saveBtn.disabled = !done;
-    saveBtn.textContent = done ? 'PNG로 간직하기' : '다 꿰매면 간직할 수 있어요';
+    saveBtn.textContent = done ? 'Keep it as a PNG' : 'Finish sewing to keep it';
     document.body.dataset.mode = stage.mode;
   };
   lightBtn.onclick = () => {
@@ -22,7 +22,7 @@ export function bindControls(stage: QuiltStage, q: Quilt, lightBtn: HTMLButtonEl
   };
   saveBtn.onclick = async () => {
     saveBtn.disabled = true;
-    saveBtn.textContent = '큰 그림으로 짓는 중';
+    saveBtn.textContent = 'Weaving a large image…';
     try {
       const blob = await exportPng(q, stage.sewing, stage.mode);
       download(blob, exportName());

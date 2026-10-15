@@ -36,8 +36,8 @@ function say(sw: Sewing) {
   const left = sw.seams.filter((s) => !s.sewn).length;
   document.body.dataset.sewn = String(sw.sewnCount);
   status.textContent = sw.done
-    ? '다 이었어요. 이제 한 장의 조각보입니다.'
-    : `마지막 솔기 ${left}개가 남았어요. 붉은 시침실을 따라 그어 직접 꿰매 보세요.`;
+    ? 'All sewn. It is one cloth now.'
+    : `${left === 1 ? 'One last seam is' : `The last ${left} seams are`} left. Trace the red basting thread to sew it yourself.`;
 }
 
 async function main() {
@@ -71,5 +71,5 @@ async function main() {
 }
 
 main().catch((e) => {
-  status.textContent = `조각보를 펼치지 못했어요: ${e instanceof Error ? e.message : e}`;
+  status.textContent = `Could not unfold the patchwork: ${e instanceof Error ? e.message : e}`;
 });

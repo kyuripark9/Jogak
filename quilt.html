@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>조각 · 조각보 짓기</title>
+    <title>Jogak · Build a patchwork</title>
     <meta name="theme-color" content="#f3eee3" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/src/app/base.css" />
@@ -12,28 +12,28 @@
   </head>
   <body>
     <main class="page">
-      <h1>조각보 짓기 <span>조각 · 내 캡처로 짓기</span></h1>
+      <h1>Build a patchwork <span>Jogak · From your screenshots</span></h1>
       <p class="lede">
-        잘라 낸 사진마다 대표 색과 결만 남겨 천 조각으로 물들이고, 기억의 무게만큼 크기를 나눠 펼쳐 둡니다. 솔기는 직접 꿰매야 이어집니다.
+        Each photo cut from your grid keeps only its main colors and texture and is dyed into a scrap of cloth, sized by the weight of the memory and laid out loose. The seams join only when you sew them.
       </p>
       <section class="intake" id="drop">
         <label class="pick">
           <input id="files" type="file" multiple accept="image/*,application/pdf,.pdf" />
-          <span>캡처 올리기</span>
+          <span>Upload screenshots</span>
         </label>
-        <p class="hint">1단계와 같은 캡처를 그대로 쓸 수 있어요.</p>
+        <p class="hint">The same screenshots as the grid check work here.</p>
         <div class="samples">
-          <button type="button" data-sample="natural">예시: 장면 사진 36장</button>
-          <label class="pin">고정 게시물 <select id="pinned"><option value="0">없음</option><option value="1">맨 앞 1개</option><option value="2">맨 앞 2개</option><option value="3">맨 앞 3개</option></select></label>
-          <button type="button" id="reseed" hidden>다시 자르기</button>
+          <button type="button" data-sample="natural">Sample: 36 scene photos</button>
+          <label class="pin">Pinned posts <select id="pinned"><option value="0">None</option><option value="1">First 1</option><option value="2">First 2</option><option value="3">First 3</option></select></label>
+          <button type="button" id="reseed" hidden>Cut again</button>
         </div>
       </section>
       <p class="progress" id="progress" aria-live="polite"></p>
       <figure class="quilt" id="quilt" hidden>
-        <canvas id="canvas"></canvas>
+        <canvas id="canvas" aria-label="A patchwork of cloth scraps dyed from your photos"></canvas>
         <figcaption id="sew-status" aria-live="polite"></figcaption>
         <div class="hands"><button type="button" class="thread-button" id="light"></button><button type="button" class="thread-button" id="save" disabled></button></div>
-        <p class="hint"><span class="by-mouse">조각 위에 마우스를 올리면</span><span class="by-touch">조각을 길게 누르면</span> 천 너머로 원래 사진이 비쳐요.</p>
+        <p class="hint"><span class="by-mouse">Hover over a piece</span><span class="by-touch">Press and hold a piece</span> to see the original photo through the cloth.</p>
       </figure>
       <section id="ledger" hidden></section>
     </main>

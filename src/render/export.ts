@@ -19,7 +19,7 @@ export async function exportPng(q: Quilt, sewing: Sewing, mode: 'wall' | 'light'
     canvas.width = canvas.height = 0;
     if (blob && blob.size > 10_000) return blob;
   }
-  throw new Error('이 기기에서 큰 그림을 만들지 못했어요.');
+  throw new Error('This device could not create a large image.');
 }
 
 export function download(blob: Blob, name: string) {

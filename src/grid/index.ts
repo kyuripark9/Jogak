@@ -63,7 +63,7 @@ export interface AnalyzeOptions extends Pick<ScanOptions, 'tolerance'> {
 export async function analyze(inputs: SourceInput[], opts: AnalyzeOptions = {}): Promise<AnalysisResult> {
   const pre = [];
   for (const [i, { name, reader }] of inputs.entries()) {
-    opts.onProgress?.(`${name}: 여백선 찾는 중`);
+    opts.onProgress?.(`${name}: finding gutters…`);
     const base = {
       name,
       width: reader.width,
@@ -109,15 +109,15 @@ export async function analyze(inputs: SourceInput[], opts: AnalyzeOptions = {}):
       error: 'error' in p ? p.error : undefined,
     };
     if (!p.columns || !p.s) {
-      out.error ??= '세 칸(또는 여러 칸) 그리드의 세로 여백선을 찾지 못했어요.';
+      out.error ??= 'Could not find the vertical gutters of a three-column (or multi-column) grid.';
     } else if (aspect == null) {
-      out.error = '위아래가 온전히 보이는 줄이 없어 칸 비율을 정하지 못했어요.';
+      out.error = 'No row is fully visible top to bottom, so the cell aspect ratio could not be determined.';
       out.bands = p.bands.map((b) => ({ ...b, status: 'partial' as const }));
     } else {
       out.bands = classifyBands(p.bands, p.columns, aspect);
       const complete = out.bands.filter((b) => b.status === 'complete');
       out.headerEnd = complete[0]?.y0 ?? null;
-      opts.onProgress?.(`${p.name}: 칸 ${complete.length * p.columns.cells.length}개 자르는 중`);
+      opts.onProgress?.(`${p.name}: cutting ${complete.length * p.columns.cells.length} cells…`);
       out.cells = await extractCells(i, inputs[i].reader, p.s, p.columns, complete, { thumbWidth: opts.thumbWidth });
       if (complete.length) {
         const first = out.bands.indexOf(complete[0]);

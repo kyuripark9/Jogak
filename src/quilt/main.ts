@@ -29,7 +29,7 @@ function rasterCanvas(r: Raster) {
 async function run(sources: LoadedSource[], errors: string[] = []) {
   document.body.dataset.state = 'busy';
   if (!sources.length) {
-    progress.textContent = errors.join(' ') || '읽을 수 있는 파일이 없어요.';
+    progress.textContent = errors.join(' ') || 'No readable files.';
     return;
   }
   result = await analyze(
@@ -49,10 +49,10 @@ function sew() {
     .map((p) => p.cell.thumb)
     .reverse();
   if (!thumbs.length) {
-    progress.textContent = '조각으로 쓸 사진을 찾지 못했어요.';
+    progress.textContent = 'Found no photos to use as pieces.';
     return;
   }
-  progress.textContent = `${thumbs.length}조각 물들이는 중`;
+  progress.textContent = `Dyeing ${thumbs.length} pieces…`;
   const t0 = performance.now();
   const q = buildQuilt(thumbs, seed);
   const canvas = $<HTMLCanvasElement>('#canvas');
@@ -72,18 +72,20 @@ function sew() {
   $('#reseed').hidden = false;
   renderLedger(q);
   const groups = new Set(q.memories.map((m) => m.weighed.group)).size;
-  progress.textContent = `${thumbs.length}조각, ${groups}개의 날로 묶어 ${Math.round(performance.now() - t0)}ms 만에 이었어요.`;
+  progress.textContent = `${thumbs.length} pieces grouped into ${plural(groups, 'day')}, laid out in ${Math.round(performance.now() - t0)} ms.`;
   document.body.dataset.state = 'done';
   document.body.dataset.pieces = String(q.patchwork.pieces.length);
   (window as unknown as { __quilt: Quilt }).__quilt = q;
 }
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
 function updateSewStatus(sw: QuiltStage['sewing']) {
   const total = sw.seams.length;
   document.body.dataset.sewn = String(sw.sewnCount);
   sewStatus.textContent = sw.done
-    ? `솔기 ${total}개를 모두 꿰맸어요. 한 장의 조각보가 되었어요.`
-    : `솔기 ${sw.sewnCount} / ${total}. 붉은 시침실을 손가락이나 마우스로 따라 그으면 꿰매져요. 작은 조각부터 이어야 큰 솔기가 열립니다.`;
+    ? `All ${total} seams sewn. It is one cloth now.`
+    : `Seams ${sw.sewnCount} / ${total}. Trace a red basting thread with your finger or mouse to sew it. Small pieces join first; the larger seams open after.`;
 }
 
 function renderLedger(q: Quilt) {
@@ -105,15 +107,15 @@ function renderLedger(q: Quilt) {
     tile.className = 'swatch-fabric';
     const area = q.patchwork.pieces[m.order].area / total;
     const info = document.createElement('span');
-    info.innerHTML = `<strong>${m.order + 1}</strong> · ${FABRIC_NAMES[m.fabric.fabric]} · ${m.weighed.groupSize}장인 날 · 넓이 ${(area * 100).toFixed(1)}%`;
+    info.innerHTML = `<strong>${m.order + 1}</strong> · ${FABRIC_NAMES[m.fabric.fabric]} · ${plural(m.weighed.groupSize, 'photo')} that day · ${(area * 100).toFixed(1)}% of the area`;
     li.append(rasterCanvas(m.thumb), chips, tile, info);
     ol.append(li);
   }
   const h = document.createElement('h2');
-  h.textContent = '조각 장부';
+  h.textContent = 'Piece ledger';
   const p = document.createElement('p');
   p.className = 'hint';
-  p.textContent = '시간순(1이 가장 오래된 기억). 사진에서 뽑은 색 비율, 물들인 천, 묶인 날의 사진 수와 차지한 넓이.';
+  p.textContent = 'In time order (1 is the oldest memory): color ratios taken from the photo, the cloth it was dyed into, how many photos share its day, and the area it takes.';
   box.replaceChildren(h, p, ol);
   box.hidden = false;
 }
@@ -121,7 +123,7 @@ function renderLedger(q: Quilt) {
 $('#files').addEventListener('change', async (e) => {
   const files = [...((e.target as HTMLInputElement).files ?? [])];
   if (!files.length) return;
-  progress.textContent = '파일 여는 중';
+  progress.textContent = 'Opening files…';
   const { sources, errors } = await loadFiles(files);
   await run(sources, errors);
 });
@@ -143,7 +145,7 @@ pinnedSel.addEventListener('change', sew);
 $('#reseed').addEventListener('click', () => { seed++; sew(); });
 
 $('[data-sample="natural"]').addEventListener('click', async () => {
-  progress.textContent = '예시 캡처 만드는 중';
+  progress.textContent = 'Generating sample screenshots…';
   await new Promise((r) => setTimeout(r, 20));
   const pr = buildProfile({ posts: 36, aspect: 1.25, seed: 5, style: 'natural' });
   const cap = longCapture(pr);

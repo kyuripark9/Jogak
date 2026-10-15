@@ -26,7 +26,7 @@ test.setTimeout(120_000);
 test('업로드 없이 첫 화면에 조각보가 펼쳐지고 간직하기는 잠겨 있다', async ({ page }) => {
   await page.goto('/');
   await page.waitForSelector('body[data-state="done"]');
-  await expect(page.locator('#sew-status')).toContainText('마지막 솔기');
+  await expect(page.locator('#sew-status')).toContainText('left. Trace the red basting thread');
   await expect(page.locator('#save')).toBeDisabled();
   if (shotDir) await page.screenshot({ path: join(shotDir, `demo-${test.info().project.name}.png`), fullPage: true });
 });
@@ -43,14 +43,14 @@ test('남은 솔기를 꿰매면 PNG로 간직하고, 창에 걸면 빛이 비�
     if (!left.length) break;
     for (const s of left) await drag(page, s.a, s.b);
   }
-  await expect(page.locator('#sew-status')).toContainText('다 이었어요');
+  await expect(page.locator('#sew-status')).toContainText('All sewn');
   await expect(page.locator('#save')).toBeEnabled();
   await page.waitForTimeout(700);
   if (shotDir) await page.locator('#canvas').screenshot({ path: join(shotDir, 'demo-wall.png') });
 
   await page.click('#light');
   await expect(page.locator('body')).toHaveAttribute('data-mode', 'light');
-  await expect(page.locator('#light')).toHaveText('벽에 걸기');
+  await expect(page.locator('#light')).toHaveText('Hang it on the wall');
   const box = (await page.locator('#canvas').boundingBox())!;
   await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.25);
   await page.waitForTimeout(300);

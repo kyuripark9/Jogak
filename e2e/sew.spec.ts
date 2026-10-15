@@ -56,7 +56,7 @@ test('솔기를 따라 그어 끝까지 꿰매고, 올리면 원본이 비친다
     if (rounds === 2 && shotDir) await page.locator('#quilt canvas').screenshot({ path: join(shotDir, 'sew-mid.png') });
   }
   await expect(page.locator('body')).toHaveAttribute('data-sewn', '35');
-  await expect(page.locator('#sew-status')).toContainText('모두 꿰맸어요');
+  await expect(page.locator('#sew-status')).toContainText('seams sewn');
   await page.waitForTimeout(800);
   if (shotDir) await page.locator('#quilt canvas').screenshot({ path: join(shotDir, 'sew-done.png') });
 

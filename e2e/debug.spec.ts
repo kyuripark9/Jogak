@@ -29,7 +29,7 @@ test('긴 스크롤 캡처 (2만 px 넘음): 띠로 나눠 읽고 120조각', as
   await upload(page, [f('long-scroll.png')]);
   await expect(page.locator('#summary')).toHaveAttribute('data-posts', '120');
   await expect(page.locator('#summary')).toHaveAttribute('data-aspect', /^1\.33/);
-  await expect(page.locator('.source figcaption')).toContainText('띠');
+  await expect(page.locator('.source figcaption')).toContainText('strips');
   await expect(page.locator('.piece.placeholder')).toHaveCount(1);
   if (shotDir) await page.screenshot({ path: join(shotDir, `long-${info.project.name}.png`) });
 });

@@ -50,7 +50,7 @@ async function run(sources: LoadedSource[], errors: string[] = []) {
   $('#pieces').hidden = true;
   $('#summary').hidden = true;
   if (!sources.length) {
-    progress.textContent = errors.join(' ') || '읽을 수 있는 파일이 없어요.';
+    progress.textContent = errors.join(' ') || 'No readable files.';
     return;
   }
   // 띠를 읽을 때마다 미리보기 조각을 쌓아 둔다 (긴 캡처도 한 캔버스에 올리지 않기 위해)
@@ -68,7 +68,7 @@ async function run(sources: LoadedSource[], errors: string[] = []) {
   const ms = Math.round(performance.now() - t0);
   lastResult = result;
   (window as unknown as { __jogak: AnalysisResult }).__jogak = result;
-  progress.textContent = `${sources.length}개 캡처를 ${ms}ms 만에 읽었어요.` + (errors.length ? ` (${errors.join(' ')})` : '');
+  progress.textContent = `Read ${sources.length === 1 ? '1 capture' : `${sources.length} captures`} in ${ms} ms.` + (errors.length ? ` (${errors.join(' ')})` : '');
   renderSummary(result, sources);
   result.sources.forEach((s, i) => $('#sources').append(renderSource(result, s, i, tiles[i], sources[i])));
   renderPieces(result);
@@ -83,19 +83,19 @@ function renderSummary(r: AnalysisResult, sources: LoadedSource[]) {
     ...r.sources.filter((s) => s.error).map((s) => `${s.name}: ${s.error}`),
     ...r.stitch.joins.filter((j) => j.warning).map((j) => `${r.sources[j.sourceIndex].name}: ${j.warning}`),
   ];
-  const kinds = { screenshot: '스크린샷', long: '긴 캡처', pdf: 'PDF' };
+  const kinds = { screenshot: 'screenshot', long: 'long capture', pdf: 'PDF' };
   const dl = el('dl', { class: 'facts' });
   const fact = (k: string, v: string | Node) => dl.append(el('dt', {}, k), el('dd', {}, v));
-  fact('캡처', sources.map((s) => kinds[s.kind]).join(' · '));
-  fact('칸 비율', r.aspect ? `${ratioName(r.aspect)} (높이/너비 ${r.aspect.toFixed(3)})` : '정하지 못함');
-  fact('열', cols ? `${cols.cells.length}열 · 칸 폭 ${Math.round(cols.cellWidth)}px · 여백 ${cols.gutterWidth}px` : '—');
+  fact('Captures', sources.map((s) => kinds[s.kind]).join(' · '));
+  fact('Cell ratio', r.aspect ? `${ratioName(r.aspect)} (height/width ${r.aspect.toFixed(3)})` : 'Undetermined');
+  fact('Columns', cols ? `${cols.cells.length} columns · cell ${Math.round(cols.cellWidth)}px · gutter ${cols.gutterWidth}px` : '—');
   if (bg) {
     const sw = el('span', { class: 'swatch' });
     sw.style.background = `rgb(${bg.join(',')})`;
-    fact('바탕(여백) 색', el('span', {}, sw, ` rgb(${bg.join(', ')})`));
+    fact('Background (gutter) color', el('span', {}, sw, ` rgb(${bg.join(', ')})`));
   }
-  fact('조각', `${r.posts.length}개 (중복 줄 ${r.stitch.duplicates.size}개 뺌)`);
-  box.replaceChildren(el('h2', {}, '읽은 결과'), dl);
+  fact('Pieces', `${r.posts.length} (${r.stitch.duplicates.size} duplicate rows removed)`);
+  box.replaceChildren(el('h2', {}, 'Result'), dl);
   if (warnings.length) box.append(el('ul', { class: 'warnings' }, ...warnings.map((w) => el('li', {}, w))));
   const key = (style: string, label: string) => {
     const i = el('i');
@@ -103,16 +103,16 @@ function renderSummary(r: AnalysisResult, sources: LoadedSource[]) {
     return el('li', {}, i, label);
   };
   box.append(
-    el('h2', { class: 'legend-title' }, '겹쳐 그린 표시'),
+    el('h2', { class: 'legend-title' }, 'Overlay key'),
     el(
       'ul',
       { class: 'legend' },
-      key('border:2px dashed var(--thread)', '잘라 낸 칸'),
-      key('border-left:2px dashed var(--indigo)', '세로 여백선'),
-      key('background:rgba(243,238,227,.9);outline:1px solid var(--line)', '헤더 (건너뜀)'),
-      key('background:rgba(43,39,35,.55)', '잘린 줄 (버림)'),
-      key('background:repeating-linear-gradient(45deg,rgba(201,162,39,.6) 0 3px,transparent 3px 6px)', '앞 캡처와 겹친 줄'),
-      key('background:linear-gradient(90deg,#a8432f 33%,#efe8da 33% 66%,#8c8478 66%)', '왼쪽 띠: 그리드 행 / 빈 줄 / 그 밖'),
+      key('border:2px dashed var(--thread)', 'Cut cell'),
+      key('border-left:2px dashed var(--indigo)', 'Vertical gutter'),
+      key('background:rgba(243,238,227,.9);outline:1px solid var(--line)', 'Header (skipped)'),
+      key('background:rgba(43,39,35,.55)', 'Cut-off row (discarded)'),
+      key('background:repeating-linear-gradient(45deg,rgba(201,162,39,.6) 0 3px,transparent 3px 6px)', 'Row overlapping the previous capture'),
+      key('background:linear-gradient(90deg,#a8432f 33%,#efe8da 33% 66%,#8c8478 66%)', 'Left ribbon: grid row / blank / other'),
     ),
   );
   box.hidden = false;
@@ -121,9 +121,9 @@ function renderSummary(r: AnalysisResult, sources: LoadedSource[]) {
 }
 
 function ratioName(a: number) {
-  const known: [number, string][] = [[1, '1:1 정사각형'], [1.25, '4:5 세로형'], [4 / 3, '3:4 세로형']];
+  const known: [number, string][] = [[1, '1:1 square'], [1.25, '4:5 portrait'], [4 / 3, '3:4 portrait']];
   const hit = known.find(([v]) => Math.abs(v - a) < 0.02);
-  return hit ? hit[1] : '세로형';
+  return hit ? hit[1] : 'portrait';
 }
 
 function renderSource(r: AnalysisResult, s: SourceAnalysis, si: number, tiles: HTMLCanvasElement[], src: LoadedSource) {
@@ -133,12 +133,12 @@ function renderSource(r: AnalysisResult, s: SourceAnalysis, si: number, tiles: H
   const join = r.stitch.joins.find((j) => j.sourceIndex === si);
   const facts = [
     `${s.width}×${s.height}px`,
-    s.stripCount > 1 ? `띠 ${s.stripCount}개로 나눠 읽음` : '한 번에 읽음',
-    s.headerEnd != null ? `위 ${s.headerEnd}px 건너뜀` : '',
-    `온전한 줄 ${complete.length}`,
-    `잘린 줄 ${s.bands.filter((b) => b.status === 'partial').length}`,
-    dupRows ? `앞 캡처와 겹친 줄 ${dupRows}` : '',
-    join?.continuedByPartial ? '잘린 줄로 이어짐 확인' : '',
+    s.stripCount > 1 ? `read in ${s.stripCount} strips` : 'read in one pass',
+    s.headerEnd != null ? `skipped top ${s.headerEnd}px` : '',
+    `complete rows ${complete.length}`,
+    `cut-off rows ${s.bands.filter((b) => b.status === 'partial').length}`,
+    dupRows ? `rows overlapping the previous capture ${dupRows}` : '',
+    join?.continuedByPartial ? 'continuity confirmed by a cut-off row' : '',
   ].filter(Boolean);
   fig.append(el('figcaption', {}, el('strong', {}, s.name), el('span', {}, facts.join(' · '))));
 
@@ -158,7 +158,7 @@ function renderSource(r: AnalysisResult, s: SourceAnalysis, si: number, tiles: H
 /** 왼쪽 띠: 행마다 그리드 행 / 빈 줄 / 그 밖(헤더·상단바) 중 무엇으로 읽었는지 */
 function rowRibbon(s: SourceAnalysis, tiles: HTMLCanvasElement[]) {
   const h = tiles.reduce((p, t) => p + t.height, 0) || 1;
-  const c = el('canvas', { class: 'ribbon', title: '행 분류' });
+  const c = el('canvas', { class: 'ribbon', title: 'Row classification' });
   c.width = 1;
   c.height = h;
   const ctx = c.getContext('2d')!;
@@ -211,7 +211,7 @@ function overlay(r: AnalysisResult, s: SourceAnalysis, si: number) {
 function renderPieces(r: AnalysisResult) {
   const box = $('#pieces');
   const sel = el('select', { id: 'pinned' });
-  for (let n = 0; n <= 3; n++) sel.append(el('option', { value: String(n) }, n === 0 ? '없음' : `맨 앞 ${n}개`));
+  for (let n = 0; n <= 3; n++) sel.append(el('option', { value: String(n) }, n === 0 ? 'None' : `First ${n}`));
   (sel as HTMLSelectElement).value = String(pinned);
   sel.addEventListener('change', () => {
     pinned = Number((sel as HTMLSelectElement).value);
@@ -223,21 +223,21 @@ function renderPieces(r: AnalysisResult) {
     const isPinned = p.gridIndex < pinned;
     // 그리드는 최신이 맨 앞. 고정 게시물을 뺀 나머지를 뒤집으면 시간 순서
     const chrono = isPinned ? null : timeline - (p.gridIndex - pinned);
-    const flags = [isPinned ? '고정' : '', p.cell.kind === 'placeholder' ? '불러오기 전 칸' : ''].filter(Boolean);
+    const flags = [isPinned ? 'pinned' : '', p.cell.kind === 'placeholder' ? 'not loaded yet' : ''].filter(Boolean);
     const li = el(
       'li',
       { class: `piece ${p.cell.kind}${isPinned ? ' pinned' : ''}`, title: `${r.sources[p.cell.sourceIndex].name} · ${p.cell.rect.x},${p.cell.rect.y}` },
       rasterCanvas(p.cell.thumb),
       el('span', { class: 'n' }, `#${p.gridIndex + 1}`),
-      el('span', { class: 't' }, chrono ? `시간순 ${chrono}` : '시간순 제외'),
+      el('span', { class: 't' }, chrono ? `#${chrono} in time` : 'not in timeline'),
     );
     if (flags.length) li.append(el('span', { class: 'flag' }, flags.join(' · ')));
     list.append(li);
   }
   box.replaceChildren(
-    el('h2', {}, '잘라 낸 조각'),
-    el('p', { class: 'hint' }, '그리드 순서(맨 위 왼쪽이 가장 최근)대로 늘어놓았어요. 시간순 1이 가장 오래된 기억입니다.'),
-    el('label', { class: 'pin' }, '프로필 맨 위 고정 게시물 ', sel),
+    el('h2', {}, 'Cut pieces'),
+    el('p', { class: 'hint' }, 'Laid out in grid order (top left is the most recent). #1 in time is the oldest memory.'),
+    el('label', { class: 'pin' }, 'Pinned posts at the top of the profile ', sel),
     list,
   );
   box.hidden = false;
@@ -246,7 +246,7 @@ function renderPieces(r: AnalysisResult) {
 // ── 입력 ─────────────────────────────────────────────────────────
 
 async function fromFiles(files: File[]) {
-  progress.textContent = '파일 여는 중';
+  progress.textContent = 'Opening files…';
   document.body.dataset.state = 'busy';
   const { sources, errors } = await loadFiles(files);
   await run(sources, errors);
@@ -274,7 +274,7 @@ function memorySource(name: string, r: Raster, kind: LoadedSource['kind']): Load
 
 document.querySelectorAll<HTMLButtonElement>('[data-sample]').forEach((b) =>
   b.addEventListener('click', async () => {
-    progress.textContent = '예시 캡처 만드는 중';
+    progress.textContent = 'Generating sample screenshots…';
     document.body.dataset.state = 'busy';
     await new Promise((r) => setTimeout(r, 20));
     if (b.dataset.sample === 'shots') {

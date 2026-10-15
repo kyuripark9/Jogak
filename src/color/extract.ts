@@ -15,7 +15,7 @@ export interface Swatch {
 
 export type Fabric = 'mosi' | 'sambe' | 'myeongju';
 
-export const FABRIC_NAMES: Record<Fabric, string> = { mosi: '모시', sambe: '삼베', myeongju: '명주' };
+export const FABRIC_NAMES: Record<Fabric, string> = { mosi: 'mosi (ramie)', sambe: 'sambe (hemp)', myeongju: 'myeongju (silk)' };
 
 export interface Feel {
   /** 밝기 평균 (L, 0~100) */

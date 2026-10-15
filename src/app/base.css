@@ -24,7 +24,7 @@ body {
     repeating-linear-gradient(83deg, rgba(120, 100, 70, 0.025) 0 1px, transparent 1px 7px),
     repeating-linear-gradient(-11deg, rgba(120, 100, 70, 0.03) 0 1px, transparent 1px 11px);
   color: var(--ink);
-  font-family: "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", serif;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   line-height: 1.6;
   -webkit-text-size-adjust: 100%;
 }

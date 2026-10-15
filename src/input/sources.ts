@@ -27,7 +27,7 @@ function stripCanvas(width: number, height: number) {
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) throw new Error('캔버스를 만들 수 없어요.');
+  if (!ctx) throw new Error('Could not create a canvas.');
   return { canvas, ctx };
 }
 
@@ -50,7 +50,7 @@ export async function imageSource(file: File): Promise<LoadedSource> {
     await img.decode();
   } catch {
     URL.revokeObjectURL(url);
-    throw new Error(`${file.name}: 이미지를 열 수 없어요.`);
+    throw new Error(`${file.name}: could not open this image.`);
   }
   const W = img.naturalWidth, H = img.naturalHeight;
   const stripHeight = stripHeightFor(W);
@@ -75,7 +75,7 @@ export async function imageSource(file: File): Promise<LoadedSource> {
           bmp.close();
           data = ctx.getImageData(0, 0, W, h);
           if (looksBlank(data.data)) {
-            throw new Error(`${file.name}: 이 기기에서는 이미지가 너무 커서 ${y}px 부근을 읽지 못했어요.`);
+            throw new Error(`${file.name}: this image is too large for this device; reading stopped near ${y}px.`);
           }
         }
         return toRaster(data);
@@ -108,7 +108,7 @@ export async function pdfSources(file: File): Promise<LoadedSource[]> {
     const stripHeight = stripHeightFor(W);
     const { canvas, ctx } = stripCanvas(W, Math.min(H, stripHeight));
     out.push({
-      name: doc.numPages > 1 ? `${file.name} · ${n}쪽` : file.name,
+      name: doc.numPages > 1 ? `${file.name} · page ${n}` : file.name,
       kind: 'pdf',
       reader: {
         width: W,

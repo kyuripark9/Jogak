@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>조각 · 기억을 꿰매는 조각보</title>
-    <meta name="description" content="사진을 천 조각으로 물들여 손으로 꿰매는 조각보 앨범" />
+    <title>Jogak · Memories sewn into patchwork</title>
+    <meta name="description" content="A photo album that dyes your photos into scraps of sheer cloth and lets you sew them, by hand, into a jogakbo, the Korean patchwork wrapping cloth." />
     <meta name="theme-color" content="#f3eee3" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/src/app/base.css" />
@@ -14,27 +14,29 @@
   <body>
     <main class="page demo">
       <header>
-        <h1>조각 <span>기억을 꿰매는 조각보</span></h1>
+        <h1>Jogak <span>Memories sewn into patchwork</span></h1>
         <p class="lede">
-          인스타그램 피드는 모든 순간을 같은 크기의 칸으로 납작하게 만듭니다.
-          그 칸에서 기억을 꺼내 색과 결만 남긴 천으로 물들이고, 기억의 무게만큼 잘라 손으로 다시 잇습니다.
+          An Instagram feed flattens every moment into the same square.
+          Jogak takes each memory out of its square, keeps only its color and texture as dyed cloth,
+          cuts it to the weight of the memory, and joins the pieces back together by hand,
+          the way a jogakbo is pieced from leftover scraps.
         </p>
       </header>
       <figure class="quilt" id="quilt">
-        <canvas id="canvas" aria-label="사진으로 물들인 천 조각들을 이은 조각보"></canvas>
+        <canvas id="canvas" aria-label="A patchwork of cloth scraps dyed from photos"></canvas>
       </figure>
-      <section class="side" aria-label="꿰매기">
-        <p id="sew-status" aria-live="polite">조각보를 펼치는 중</p>
-        <p class="hint"><span class="by-mouse">조각 위에 마우스를 올리면</span><span class="by-touch">조각을 길게 누르면</span> 천 너머로 원래 사진이 비쳐요.</p>
+      <section class="side" aria-label="Sewing">
+        <p id="sew-status" aria-live="polite">Unfolding the patchwork…</p>
+        <p class="hint"><span class="by-mouse">Hover over a piece</span><span class="by-touch">Press and hold a piece</span> to see the original photo through the cloth.</p>
         <div class="hands">
           <button type="button" class="thread-button" id="light"></button>
           <button type="button" class="thread-button" id="save" disabled></button>
         </div>
-        <nav class="next" aria-label="다른 화면">
-          <a class="thread-link" href="./quilt.html">내 인스타그램 캡처로 짓기</a>
-          <a class="thread-link quiet" href="./debug.html">캡처 자르기 확인 화면</a>
+        <nav class="next" aria-label="Other views">
+          <a class="thread-link" href="./quilt.html">Make one from my Instagram screenshots</a>
+          <a class="thread-link quiet" href="./debug.html">Grid slicing check</a>
         </nav>
-        <p class="private">사진은 이 브라우저 밖으로 나가지 않아요.</p>
+        <p class="private">Your photos never leave this browser.</p>
       </section>
     </main>
     <script type="module" src="/src/demo/main.ts"></script>
