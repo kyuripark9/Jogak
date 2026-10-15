@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "fixtures": "node --experimental-strip-types scripts/make-fixtures.ts",
+    "demo-photos": "node --experimental-strip-types scripts/make-demo.ts",
     "e2e": "playwright test"
   },
   "repository": {

@@ -29,6 +29,9 @@ export class QuiltStage {
   private q: Quilt;
   private pixelWidth: number;
   private events: StageEvents;
+  mode: 'wall' | 'light' = 'wall';
+  private light: Pt = [300, 250];
+  private lightTarget: Pt = [300, 250];
 
   constructor(canvas: HTMLCanvasElement, q: Quilt, pixelWidth: number, events: StageEvents = {}, sewing?: Sewing) {
     this.canvas = canvas;
@@ -65,6 +68,15 @@ export class QuiltStage {
     const c = centroid(this.q.patchwork.pieces[i].poly);
     const moved = applyTransform(t, c);
     return { dx: moved[0] - c[0], dy: moved[1] - c[1], rot: t.rot, cx: c[0], cy: c[1] };
+  }
+
+  /**
+   * 빛 모드: 조각보를 창에 건다. 손(포인터)을 따라 빛이 드는 자리가 옮겨 가서,
+   * 천을 들고 빛에 이리저리 비춰 보는 것처럼 겹친 솔기와 실이 드러난다.
+   */
+  setMode(mode: 'wall' | 'light') {
+    this.mode = mode;
+    this.schedule();
   }
 
   /** 화면 좌표 → 조각보 단위 */
@@ -127,6 +139,10 @@ export class QuiltStage {
 
   private move = (e: PointerEvent) => {
     const p = this.toQuilt(e.clientX, e.clientY);
+    if (this.mode === 'light') {
+      this.lightTarget = p;
+      this.schedule();
+    }
     if (this.sewingSeam) {
       const sw = this.sewingSeam;
       const seam = this.q.patchwork.seams[sw.seam];
@@ -203,6 +219,11 @@ export class QuiltStage {
       if (Math.abs(t.dx - c.dx) + Math.abs(t.dy - c.dy) + Math.abs(t.rot - c.rot) * 100 > 0.05) moving = true;
       this.current[i] = next;
     });
+    const dl = Math.hypot(this.lightTarget[0] - this.light[0], this.lightTarget[1] - this.light[1]);
+    if (this.mode === 'light' && dl > 0.5) {
+      this.light = [this.light[0] + (this.lightTarget[0] - this.light[0]) * 0.12, this.light[1] + (this.lightTarget[1] - this.light[1]) * 0.12];
+      moving = true;
+    }
     if (this.reveal) {
       this.reveal.alpha += (this.reveal.target - this.reveal.alpha) * 0.2;
       if (Math.abs(this.reveal.target - this.reveal.alpha) > 0.01) moving = true;
@@ -217,6 +238,8 @@ export class QuiltStage {
       sewing: this.sewing,
       transforms: this.current,
       reveal: this.reveal ? { index: this.reveal.index, alpha: this.reveal.alpha } : null,
+      mode: this.mode,
+      light: this.light,
     };
     renderQuilt(this.canvas, this.q, this.pixelWidth, view);
   }

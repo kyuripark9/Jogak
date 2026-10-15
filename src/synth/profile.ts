@@ -184,7 +184,7 @@ export function buildProfile(o: ProfileOptions = {}): Profile {
   return { raster: r, scale: S, gridTop, cells, dark };
 }
 
-function paintScene(p: Painter, x: number, y: number, w: number, h: number, rnd: () => number, sc: Scene) {
+function paintScene(p: Painter, x: number, y: number, w: number, h: number, rnd: () => number, sc: Scene, noise = 12) {
   const { data, width: W } = p.r;
   const jitter = (c: C, a: number): C => c.map((v) => v + (rnd() - 0.5) * a) as C;
   const sky = jitter(sc.sky, 24), ground = jitter(sc.ground, 24);
@@ -200,11 +200,18 @@ function paintScene(p: Painter, x: number, y: number, w: number, h: number, rnd:
       let c: number[] = yy < horizon ? sky.map((v, k) => v * (1 - t * 0.25) + ground[k] * t * 0.25) : ground.map((v) => v * (0.9 + 0.2 * ((yy - horizon) / h)));
       for (const b of blobs) if ((xx - b.x) ** 2 + (yy - b.y) ** 2 < b.r ** 2) c = b.c;
       if (sc.dots) for (const d of dots) if ((xx - d.x) ** 2 + (yy - d.y) ** 2 < d.r ** 2) c = sc.dots;
-      const n = (rnd() - 0.5) * 12;
+      const n = (rnd() - 0.5) * noise;
       const i = ((y + yy) * W + x + xx) * 4;
       data[i] = c[0] + n; data[i + 1] = c[1] + n; data[i + 2] = c[2] + n; data[i + 3] = 255;
     }
   }
+}
+
+/** 데모용 장면 사진 한 장 */
+export function scenePhoto(w: number, h: number, scene: number, seed: number, noise = 0): Raster {
+  const r = createRaster(w, h);
+  paintScene(new Painter(r), 0, 0, w, h, rng(seed), SCENES[scene % SCENES.length], noise);
+  return r;
 }
 
 function paintPhoto(p: Painter, x: number, y: number, w: number, h: number, rnd: () => number, id: number, dark: boolean) {

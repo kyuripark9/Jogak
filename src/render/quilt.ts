@@ -64,6 +64,13 @@ export interface QuiltView {
   transforms: Transform[];
   /** 원본이 비쳐 보이는 조각과 그 정도 (0~1) */
   reveal: { index: number; alpha: number } | null;
+  /**
+   * 'wall': 벽에 건 조각보 (천이 빛을 받아 반사)
+   * 'light': 창에 건 조각보 (빛이 뒤에서 천을 지나온다. 겹친 시접은 더 짙어진다)
+   */
+  mode?: 'wall' | 'light';
+  /** 빛 모드에서 빛이 드는 자리 (조각보 단위) */
+  light?: Pt;
 }
 
 /** 시접 너비 (조각보 단위). 이만큼 이웃 조각과 겹친다 */
@@ -94,7 +101,7 @@ function thumbCanvas(q: Quilt, i: number) {
 }
 
 /** 꿰맨 땀들. 솔기 a→b 방향 기준으로 s(거리), off(옆으로 떨어진 정도) */
-function drawSeam(ctx: CanvasRenderingContext2D, a: Pt, b: Pt, st: SeamState, s: number) {
+function drawSeam(ctx: CanvasRenderingContext2D, a: Pt, b: Pt, st: SeamState, s: number, light = false) {
   const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
   if (len < 1) return;
   const ux = (b[0] - a[0]) / len, uy = (b[1] - a[1]) / len, nx = -uy, ny = ux;
@@ -105,7 +112,8 @@ function drawSeam(ctx: CanvasRenderingContext2D, a: Pt, b: Pt, st: SeamState, s:
     ctx.lineWidth = 0.8 * s;
     ctx.beginPath(); ctx.moveTo(a[0] * s, a[1] * s); ctx.lineTo(b[0] * s, b[1] * s); ctx.stroke();
   }
-  ctx.strokeStyle = 'rgba(255, 252, 246, 0.6)';
+  // 빛이 뒤에서 오면 실은 그림자처럼 어둡게 보인다
+  ctx.strokeStyle = light ? 'rgba(96, 78, 70, 0.45)' : 'rgba(255, 252, 246, 0.6)';
   ctx.lineWidth = 0.75 * s;
   ctx.beginPath();
   for (const t of st.stitches) {
@@ -124,6 +132,30 @@ function drawBasting(ctx: CanvasRenderingContext2D, a: Pt, b: Pt, s: number, pro
   ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(a[0] * s, a[1] * s); ctx.lineTo(b[0] * s, b[1] * s); ctx.stroke();
   ctx.restore();
+}
+
+/**
+ * 창. 빛이 드는 자리가 가장 밝고, 창살 그림자가 천 너머로 흐리게 비친다.
+ * 조각보는 이 빛을 거르는 필터가 된다.
+ */
+function windowLight(ctx: CanvasRenderingContext2D, w: number, h: number, lx: number, ly: number) {
+  ctx.fillStyle = '#efe9df';
+  ctx.fillRect(0, 0, w, h);
+  const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, Math.hypot(w, h) * 0.75);
+  g.addColorStop(0, 'rgba(255, 255, 252, 1)');
+  g.addColorStop(0.45, 'rgba(255, 252, 244, 0.9)');
+  g.addColorStop(1, 'rgba(236, 228, 214, 0.6)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  // 창살: 넓고 흐린 줄 여러 겹으로 번지게
+  for (let k = 0; k < 4; k++) {
+    ctx.strokeStyle = `rgba(150, 136, 118, ${0.035})`;
+    ctx.lineWidth = w * (0.012 + k * 0.012);
+    ctx.beginPath();
+    ctx.moveTo(w * 0.64, 0); ctx.lineTo(w * 0.64, h);
+    ctx.moveTo(0, h * 0.4); ctx.lineTo(w, h * 0.4);
+    ctx.stroke();
+  }
 }
 
 const backdropCache = new Map<string, HTMLCanvasElement>();
@@ -165,10 +197,15 @@ export function renderQuilt(canvas: HTMLCanvasElement, q: Quilt, pixelWidth: num
     canvas.height = ch;
   }
   const ctx = canvas.getContext('2d')!;
+  const light = view.mode === 'light';
+  const L: Pt = view.light ?? [QUILT_WIDTH * 0.3, QUILT_HEIGHT * 0.2];
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.drawImage(cachedBackdrop(cw, ch), 0, 0);
+  if (light) windowLight(ctx, cw, ch, (L[0] + M) * s, (L[1] + M) * s);
+  else ctx.drawImage(cachedBackdrop(cw, ch), 0, 0);
   ctx.translate(M * s, M * s);
   const base = ctx.getTransform();
+  // 빛 모드: 천이 빛을 곱해서 거른다. 두 겹이 되는 시접은 저절로 더 짙어진다
+  const blend: GlobalCompositeOperation = light ? 'multiply' : 'source-over';
 
   for (const p of q.patchwork.pieces) {
     const pattern = ctx.createPattern(tileCanvas(q, p.index), 'repeat')!;
@@ -194,18 +231,20 @@ export function renderQuilt(canvas: HTMLCanvasElement, q: Quilt, pixelWidth: num
       ctx.drawImage(img, x0 + (w - img.width * k) / 2, y0 + (h - img.height * k) / 2, img.width * k, img.height * k);
       ctx.restore();
     }
-    ctx.globalAlpha = weave.opacity * (1 - 0.4 * reveal);
+    ctx.globalCompositeOperation = blend;
+    ctx.globalAlpha = (light ? Math.min(1, weave.opacity + 0.25) : weave.opacity) * (1 - 0.4 * reveal);
     ctx.fillStyle = pattern;
     ctx.fill();
     // 시접: 가장자리를 같은 천으로 한 번 더 덮어 안팎으로 겹치게 한다
     ctx.strokeStyle = pattern;
     ctx.lineWidth = SEAM_ALLOWANCE * s;
     ctx.lineJoin = 'round';
-    ctx.globalAlpha = weave.opacity * 0.7;
+    ctx.globalAlpha = weave.opacity * (light ? 0.85 : 0.7);
     ctx.stroke();
     ctx.globalAlpha = 1;
-    // 윤기: 명주처럼 매끈한 천은 결 방향을 따라 넓고 흐린 빛이 한 번 지나간다
-    if (weave.sheen > 0) {
+    ctx.globalCompositeOperation = 'source-over';
+    // 윤기: 명주처럼 매끈한 천은 결 방향을 따라 넓고 흐린 빛이 한 번 지나간다 (반사광이라 빛 모드엔 없음)
+    if (weave.sheen > 0 && !light) {
       const xs = p.poly.map((v) => v[0] * s), ys = p.poly.map((v) => v[1] * s);
       const g = ctx.createLinearGradient(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys));
       const at = 0.3 + hash(p.index * 41) * 0.4;
@@ -226,16 +265,17 @@ export function renderQuilt(canvas: HTMLCanvasElement, q: Quilt, pixelWidth: num
     if (st.stitches.length) {
       // 꿰맨 솔기는 그 덩어리와 함께 움직이고, 꿰매는 중인 솔기는 제자리
       if (st.sewn) withTransform(ctx, view.transforms[seam.from] ?? IDENTITY, s);
-      drawSeam(ctx, seam.a, seam.b, st, s);
+      drawSeam(ctx, seam.a, seam.b, st, s, light);
     }
   });
   ctx.setTransform(base);
 
-  // 뒤에서 비치는 빛: 창 쪽 조각일수록 빛을 머금어 환해진다
+  // 뒤에서 비치는 빛: 빛 가까운 조각일수록 빛을 머금어 환해진다
   ctx.globalCompositeOperation = 'screen';
   const W = QUILT_WIDTH * s, H = QUILT_HEIGHT * s;
-  const glow = ctx.createRadialGradient(W * 0.25, H * 0.15, 0, W * 0.25, H * 0.15, Math.hypot(W, H) * 0.8);
-  glow.addColorStop(0, 'rgba(255, 248, 236, 0.32)');
+  const gx = light ? L[0] * s : W * 0.25, gy = light ? L[1] * s : H * 0.15;
+  const glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, Math.hypot(W, H) * (light ? 0.55 : 0.8));
+  glow.addColorStop(0, `rgba(255, 248, 236, ${light ? 0.42 : 0.32})`);
   glow.addColorStop(1, 'rgba(255, 248, 236, 0)');
   ctx.fillStyle = glow;
   ctx.fillRect(-M * s, -M * s, W + 2 * M * s, H + 2 * M * s);

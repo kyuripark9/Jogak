@@ -31,3 +31,19 @@ export function weighByRuns(palettes: Swatch[][], threshold = SAME_DAY_DISTANCE)
     return { group: x, groupSize: n, weight: 1 + Math.sqrt(n - 1) * 0.9 };
   });
 }
+
+/** 날짜를 알 때 (앨범 사진의 EXIF, 데모 목록): 같은 날 찍은 사진 수가 그대로 무게 */
+export function weighByDates(dates: string[]): Weighed[] {
+  const group: number[] = [];
+  let g = 0;
+  dates.forEach((d, i) => {
+    if (i > 0 && d !== dates[i - 1]) g++;
+    group.push(g);
+  });
+  const size = new Map<number, number>();
+  for (const x of group) size.set(x, (size.get(x) ?? 0) + 1);
+  return group.map((x) => {
+    const n = size.get(x)!;
+    return { group: x, groupSize: n, weight: 1 + Math.sqrt(n - 1) * 0.9 };
+  });
+}

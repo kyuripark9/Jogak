@@ -5,6 +5,7 @@ import { FABRIC_NAMES } from '../color/extract.ts';
 import { buildQuilt, type Quilt } from './build.ts';
 import { QuiltStage } from '../interaction/stage.ts';
 import { finishedView } from '../render/quilt.ts';
+import { bindControls } from '../app/controls.ts';
 import { weaveTile } from '../render/fabric.ts';
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as T;
@@ -62,9 +63,10 @@ function sew() {
     canvas,
     q,
     Math.min(2048, Math.round(cssW * Math.min(2, devicePixelRatio || 1))),
-    { onSewn: (_, sw) => updateSewStatus(sw), onChange: (sw) => updateSewStatus(sw) },
+    { onSewn: (_, sw) => { updateSewStatus(sw); syncControls(); }, onChange: (sw) => updateSewStatus(sw) },
     startSewn ? finishedView(q).sewing : undefined,
   );
+  const syncControls = bindControls(stage, q, $<HTMLButtonElement>('#light'), $<HTMLButtonElement>('#save'));
   updateSewStatus(stage.sewing);
   (window as unknown as { __stage: QuiltStage }).__stage = stage;
   $('#reseed').hidden = false;

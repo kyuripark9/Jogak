@@ -1,6 +1,6 @@
 import type { Raster } from '../grid/raster.ts';
 import { dyed, extract, type Extracted } from '../color/extract.ts';
-import { weighByRuns, type Weighed } from '../layout/weight.ts';
+import { weighByDates, weighByRuns, type Weighed } from '../layout/weight.ts';
 import { layout, type Patchwork } from '../layout/patchwork.ts';
 import type { FabricSpec } from '../render/fabric.ts';
 
@@ -26,9 +26,10 @@ export const QUILT_HEIGHT = 1250;
  * thumbs: 시간순(오래된 것 먼저)으로 넘긴다.
  * 인스타 그리드는 최신순이므로 부르는 쪽에서 뒤집고 고정 게시물을 뺀다.
  */
-export function buildQuilt(thumbs: Raster[], seed = 7): Quilt {
-  const extracted = thumbs.map((t, i) => extract(t, { seed: i + 1 }));
-  const weighed = weighByRuns(extracted.map((e) => e.palette));
+export function buildQuilt(thumbs: Raster[], seed = 7, dates?: string[]): Quilt {
+  // 인스타 캡처는 칸 오른쪽 위에 아이콘이 있지만, 날짜가 있는 사진(앨범·데모)에는 없다
+  const extracted = thumbs.map((t, i) => extract(t, { seed: i + 1, skipIconCorner: !dates }));
+  const weighed = dates ? weighByDates(dates) : weighByRuns(extracted.map((e) => e.palette));
   const memories = thumbs.map((thumb, i): Memory => {
     const e = extracted[i];
     const main = e.palette[0];
