@@ -1,0 +1,33 @@
+{
+  "name": "jogak",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Jogak — a jogakbo patchwork album you sew from your memories (browser-only static site)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "fixtures": "node --experimental-strip-types scripts/make-fixtures.ts",
+    "demo-photos": "node --experimental-strip-types scripts/make-demo.ts",
+    "e2e": "playwright test",
+    "perf": "playwright test --config perf/playwright.perf.ts",
+    "og": "node --experimental-strip-types scripts/make-og.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kyuripark9/Jogak.git"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^6.4.299"
+  }
+}

@@ -1,0 +1,30 @@
+.quilt { margin: 8px 0 32px; }
+.quilt canvas {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  margin: 0 auto;
+  /* A very faint shadow, like cloth hung on a wall */
+  box-shadow: 0 1px 2px rgba(43, 39, 35, 0.12), 0 12px 28px -12px rgba(43, 39, 35, 0.28);
+}
+.samples .pin { font-size: 0.85rem; margin: 0; align-self: center; }
+#reseed { font-size: 0.9rem; }
+
+.ledger { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px 18px; }
+.ledger li { font-size: 0.75rem; color: var(--ink-soft); display: grid; grid-template-columns: 56px 1fr; gap: 4px 8px; align-items: start; }
+.ledger canvas { width: 56px; height: auto; grid-row: span 3; outline: 1px solid var(--line); }
+.ledger .chips { display: flex; height: 12px; outline: 1px solid var(--line); }
+.ledger .chips i { display: block; height: 100%; }
+.ledger .swatch-fabric { width: 100%; height: 22px; outline: 1px solid var(--line); }
+.ledger strong { color: var(--ink); font-weight: 600; }
+#sew-status { font-size: 0.88rem; color: var(--ink); max-width: 720px; margin: 12px auto 0; }
+.quilt .hint { max-width: 720px; margin: 4px auto 0; }
+.hands { display: flex; flex-wrap: wrap; gap: 0 22px; max-width: 720px; margin: 10px auto 0; }
+.hands button { font-size: 0.92rem; }
+/* Light mode: the room dims a little so the window light stands out */
+body[data-mode="light"] { background-color: #e6e0d6; transition: background-color 0.6s; }
+/* Two ways in, side by side when there is room: the album (dated) and screenshots (undated) */
+.ways { display: grid; gap: 14px 32px; }
+.way .hint { margin-top: 0; }
+@media (min-width: 720px) { .ways { grid-template-columns: 1fr 1fr; } }

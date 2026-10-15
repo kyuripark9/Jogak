@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Jogak · Memories sewn into patchwork</title>
+    <meta name="description" content="A photo album that dyes your photos into scraps of sheer cloth and lets you sew them, by hand, into a jogakbo, the Korean patchwork wrapping cloth." />
+    <meta name="theme-color" content="#f3eee3" />
+    <!-- Link preview. Absolute URLs assume GitHub Pages at kyuripark9.github.io/Jogak; change them if the site moves -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Jogak · Memories sewn into patchwork" />
+    <meta property="og:description" content="Your photos, dyed into sheer cloth and stitched together by hand. Nothing leaves your browser." />
+    <meta property="og:url" content="https://kyuripark9.github.io/Jogak/" />
+    <meta property="og:image" content="https://kyuripark9.github.io/Jogak/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/src/app/base.css" />
+    <link rel="stylesheet" href="/src/quilt/style.css" />
+    <link rel="stylesheet" href="/src/demo/style.css" />
+  </head>
+  <body>
+    <main class="page demo">
+      <header>
+        <h1>Jogak <span>Memories sewn into patchwork</span></h1>
+        <p class="lede">
+          An Instagram feed flattens every moment into the same square.
+          Jogak takes each memory out of its square, keeps only its color and texture as dyed cloth,
+          cuts it to the weight of the memory, and joins the pieces back together by hand,
+          the way a jogakbo is pieced from leftover scraps.
+        </p>
+      </header>
+      <figure class="quilt" id="quilt">
+        <canvas id="canvas" aria-label="A patchwork of cloth scraps dyed from photos"></canvas>
+      </figure>
+      <section class="side" aria-label="Sewing">
+        <p id="sew-status" aria-live="polite">Unfolding the patchwork…</p>
+        <p class="hint"><span class="by-mouse">Hover over a piece</span><span class="by-touch">Press and hold a piece</span> to see the original photo through the cloth.</p>
+        <div class="hands">
+          <button type="button" class="thread-button" id="light"></button>
+          <button type="button" class="thread-button" id="save" disabled></button>
+          <button type="button" class="thread-button quiet" id="unpick" hidden>Unpick my stitches</button>
+        </div>
+        <nav class="next" aria-label="Other views">
+          <a class="thread-link" href="./quilt.html">Make one from your own photos</a>
+          <a class="thread-link quiet" href="./debug.html">Grid slicing check</a>
+        </nav>
+        <p class="private">Your photos never leave this browser.</p>
+      </section>
+    </main>
+    <script type="module" src="/src/demo/main.ts"></script>
+  </body>
+</html>

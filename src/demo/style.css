@@ -1,0 +1,32 @@
+/*
+ * Landing page. On phones it runs top to bottom (intro → jogakbo → gestures);
+ * on wide screens the jogakbo stands fully in view with the intro and gestures beside it,
+ * because the remaining seam count and buttons must stay visible while sewing.
+ */
+.demo { max-width: 720px; }
+.demo .lede { margin-bottom: 20px; }
+.demo .quilt { margin: 0; }
+.demo #sew-status { margin: 14px 0 0; max-width: none; }
+.demo .hint { margin: 4px 0 0; }
+.demo .hands { margin: 10px 0 0; max-width: none; }
+.next { display: flex; flex-wrap: wrap; gap: 0 24px; margin-top: 28px; padding-top: 12px; border-top: 1px solid var(--line); }
+.next .quiet { font-size: 0.88rem; }
+.private { font-size: 0.78rem; color: var(--ink-soft); margin: 18px 0 0; }
+
+@media (min-width: 1040px) {
+  .demo {
+    max-width: 1180px;
+    display: grid;
+    grid-template-columns: auto minmax(260px, 340px);
+    grid-template-areas: "quilt head" "quilt side";
+    grid-template-rows: auto 1fr;
+    gap: 0 56px;
+    justify-content: center;
+  }
+  .demo header { grid-area: head; padding-top: 8px; }
+  .demo .quilt { grid-area: quilt; }
+  .demo .side { grid-area: side; }
+  /* Fit to viewport height so the whole jogakbo fits on one screen (1088 : 1338 is the ratio including margins) */
+  .demo .quilt canvas { width: min(720px, calc((100svh - 96px) * 1088 / 1338)); }
+  .demo #sew-status { margin-top: 0; }
+}

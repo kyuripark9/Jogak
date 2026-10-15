@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Jogak · Grid slicing check</title>
+    <meta name="theme-color" content="#f3eee3" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/src/app/base.css" />
+    <link rel="stylesheet" href="/src/debug/style.css" />
+  </head>
+  <body>
+    <main class="page" id="app">
+      <h1>Grid slicing check <span>Jogak · Stage 1</span></h1>
+      <p class="lede">
+        Upload screenshots of an Instagram profile. Jogak finds the gutters between cells and cuts out each post.
+        Images are read only inside this browser and are never sent anywhere.
+      </p>
+
+      <section class="intake" id="drop">
+        <label class="pick">
+          <input id="files" type="file" multiple accept="image/*,application/pdf,.pdf" />
+          <span>Upload screenshots</span>
+        </label>
+        <p class="hint">Several screenshots · one long scrolling capture · Safari full-page PDF</p>
+        <div class="samples">
+          <button type="button" data-sample="shots">Sample: 5 screenshots (4:5 cells)</button>
+          <button type="button" data-sample="long">Sample: long scrolling capture (3:4 cells, dark mode)</button>
+        </div>
+      </section>
+
+      <p class="progress" id="progress" aria-live="polite"></p>
+      <section id="summary" hidden></section>
+      <section id="sources"></section>
+      <section id="pieces" hidden></section>
+    </main>
+    <script type="module" src="/src/debug/main.ts"></script>
+  </body>
+</html>
