@@ -12,19 +12,31 @@
   </head>
   <body>
     <main class="page">
-      <h1>Build a patchwork <span>Jogak · From your screenshots</span></h1>
+      <h1>Build a patchwork <span>Jogak · From your own photos</span></h1>
       <p class="lede">
-        Each photo cut from your grid keeps only its main colors and texture and is dyed into a scrap of cloth, sized by the weight of the memory and laid out loose. The seams join only when you sew them.
+        Each photo keeps only its main colors and texture and is dyed into a scrap of cloth, sized by the weight of the memory and laid out loose. The seams join only when you sew them.
       </p>
       <section class="intake" id="drop">
-        <label class="pick">
-          <input id="files" type="file" multiple accept="image/*,application/pdf,.pdf" />
-          <span>Upload screenshots</span>
-        </label>
-        <p class="hint">The same screenshots as the grid check work here.</p>
+        <div class="ways">
+          <div class="way">
+            <label class="pick">
+              <input id="album" type="file" multiple accept="image/*" />
+              <span>Choose photos from your album</span>
+            </label>
+            <p class="hint">Grouped by the day and place each photo was taken. A day spent in two places becomes two memories.</p>
+          </div>
+          <div class="way">
+            <label class="pick">
+              <input id="files" type="file" multiple accept="image/*,application/pdf,.pdf" />
+              <span>Upload Instagram screenshots</span>
+            </label>
+            <p class="hint">Screenshots carry no dates, so neighboring posts with similar colors count as one day. The same screenshots as the grid check work here.</p>
+          </div>
+        </div>
         <div class="samples">
+          <button type="button" data-sample="album">Sample: 29 album photos</button>
           <button type="button" data-sample="natural">Sample: 36 scene photos</button>
-          <label class="pin">Pinned posts <select id="pinned"><option value="0">None</option><option value="1">First 1</option><option value="2">First 2</option><option value="3">First 3</option></select></label>
+          <label class="pin" id="pin-label">Pinned posts <select id="pinned"><option value="0">None</option><option value="1">First 1</option><option value="2">First 2</option><option value="3">First 3</option></select></label>
           <button type="button" id="reseed" hidden>Cut again</button>
         </div>
       </section>

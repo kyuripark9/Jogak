@@ -31,6 +31,7 @@ npm run build      # static site in dist/
 | `src/render/export.ts`, `src/app` | Hanging it in the window (light mode); keeping it as a PNG once fully sewn | 4 |
 | `src/app/base.css` | Shared base for every screen (hanji, ink color, running-stitch underline) | 5 |
 | `src/demo`, `public/demo` | First screen you can see without uploading; replaceable sample photos | 4 |
+| `src/input/album.ts`, `src/input/exif.ts` | Album photos: EXIF capture time and place → memories | 6 |
 
 Cloth names: mosi (ramie), sambe (hemp), myeongju (silk). Hanji is Korean mulberry paper.
 
@@ -39,3 +40,4 @@ Cloth names: mosi (ramie), sambe (hemp), myeongju (silk). Hanji is Korean mulber
 - Stage 3 sewing and seeing the original through the cloth: [docs/stage-3-sewing.md](docs/stage-3-sewing.md)
 - Stage 4 light mode, PNG export, demo: [docs/stage-4-light-export-demo.md](docs/stage-4-light-export-demo.md)
 - Stage 5 polish and performance (measured numbers): [docs/stage-5-polish-performance.md](docs/stage-5-polish-performance.md)
+- Stage 6, English site and album photos with EXIF date and place: [docs/stage-6-english-album.md](docs/stage-6-english-album.md)
