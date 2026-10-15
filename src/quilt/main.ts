@@ -3,7 +3,8 @@ import { loadFiles, stripHeightFor, type LoadedSource } from '../input/sources.t
 import { buildProfile, longCapture } from '../synth/profile.ts';
 import { FABRIC_NAMES } from '../color/extract.ts';
 import { buildQuilt, type Quilt } from './build.ts';
-import { renderQuilt } from '../render/quilt.ts';
+import { QuiltStage } from '../interaction/stage.ts';
+import { finishedView } from '../render/quilt.ts';
 import { weaveTile } from '../render/fabric.ts';
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as T;
@@ -11,6 +12,10 @@ const progress = $('#progress');
 const pinnedSel = $<HTMLSelectElement>('#pinned');
 let result: AnalysisResult | null = null;
 let seed = 7;
+let stage: QuiltStage | null = null;
+const sewStatus = $('#sew-status');
+// 테스트·확인용: ?sewn=all 이면 다 꿰맨 상태로 시작
+const startSewn = new URLSearchParams(location.search).get('sewn') === 'all';
 
 function rasterCanvas(r: Raster) {
   const c = document.createElement('canvas');
@@ -50,9 +55,18 @@ function sew() {
   const t0 = performance.now();
   const q = buildQuilt(thumbs, seed);
   const canvas = $<HTMLCanvasElement>('#canvas');
-  const cssW = Math.min(720, canvas.parentElement!.clientWidth || 720);
-  renderQuilt(canvas, q, Math.min(2048, Math.round(cssW * Math.min(2, devicePixelRatio || 1))));
   $('#quilt').hidden = false;
+  const cssW = Math.min(720, canvas.parentElement!.clientWidth || 720);
+  stage?.destroy();
+  stage = new QuiltStage(
+    canvas,
+    q,
+    Math.min(2048, Math.round(cssW * Math.min(2, devicePixelRatio || 1))),
+    { onSewn: (_, sw) => updateSewStatus(sw), onChange: (sw) => updateSewStatus(sw) },
+    startSewn ? finishedView(q).sewing : undefined,
+  );
+  updateSewStatus(stage.sewing);
+  (window as unknown as { __stage: QuiltStage }).__stage = stage;
   $('#reseed').hidden = false;
   renderLedger(q);
   const groups = new Set(q.memories.map((m) => m.weighed.group)).size;
@@ -60,6 +74,14 @@ function sew() {
   document.body.dataset.state = 'done';
   document.body.dataset.pieces = String(q.patchwork.pieces.length);
   (window as unknown as { __quilt: Quilt }).__quilt = q;
+}
+
+function updateSewStatus(sw: QuiltStage['sewing']) {
+  const total = sw.seams.length;
+  document.body.dataset.sewn = String(sw.sewnCount);
+  sewStatus.textContent = sw.done
+    ? `솔기 ${total}개를 모두 꿰맸어요. 한 장의 조각보가 되었어요.`
+    : `솔기 ${sw.sewnCount} / ${total}. 붉은 시침실을 손가락이나 마우스로 따라 그으면 꿰매져요. 작은 조각부터 이어야 큰 솔기가 열립니다.`;
 }
 
 function renderLedger(q: Quilt) {

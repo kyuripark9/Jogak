@@ -18,3 +18,5 @@
 .ledger .chips i { display: block; height: 100%; }
 .ledger .swatch-fabric { width: 100%; height: 22px; outline: 1px solid var(--line); }
 .ledger strong { color: var(--ink); font-weight: 600; }
+#sew-status { font-size: 0.88rem; color: var(--ink); max-width: 720px; margin: 12px auto 0; }
+.quilt .hint { max-width: 720px; margin: 4px auto 0; }

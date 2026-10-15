@@ -20,6 +20,10 @@ export interface Seam {
   b: Pt;
   /** 자른 순서 (먼저 자른 큰 솔기일수록 작다) */
   depth: number;
+  /** 이 솔기가 잇는 두 덩어리: 조각 [from, mid)와 [mid, to) */
+  from: number;
+  mid: number;
+  to: number;
 }
 
 export interface Patchwork {
@@ -141,7 +145,8 @@ export function layout(weights: number[], width: number, height: number, opts: L
     }
     const c = cutAt(poly, n, ratio);
     const [first, second, hits] = cut(poly, n, c);
-    if (hits.length === 2) seams.push({ a: hits[0], b: hits[1], depth });
+    const [sa, sb] = hits.length >= 2 ? hits : [first[0], first[0]];
+    seams.push({ a: sa, b: sb, depth, from, mid: k, to });
     go(first, from, k, depth + 1);
     go(second, k, to, depth + 1);
   };

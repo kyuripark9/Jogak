@@ -25,7 +25,8 @@ npm run build      # dist/ 정적 사이트
 | `src/layout` | 기억의 무게, 불규칙 조각보 분할 | 2 |
 | `src/render` | 천 짜기(노이즈), 조각보·솔기 그리기 | 2 |
 | `src/quilt` | 2단계 조각보 화면 | 2 |
-| 인터랙션 | | 3 |
+| `src/interaction` | 바느질 규칙(순서, 땀, 흐트러짐), 드래그·hover·길게 누르기 | 3 |
 
 - 1단계 설명과 실패 사례 처리: [docs/stage-1-grid.md](docs/stage-1-grid.md)
 - 2단계 메커니즘과 이유: [docs/stage-2-quilt.md](docs/stage-2-quilt.md)
+- 3단계 바느질과 원본 비쳐 보기: [docs/stage-3-sewing.md](docs/stage-3-sewing.md)

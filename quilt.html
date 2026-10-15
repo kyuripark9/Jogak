@@ -9,9 +9,9 @@
   </head>
   <body>
     <main class="page">
-      <h1>조각보 짓기 <span>조각 · 2단계</span></h1>
+      <h1>조각보 짓기 <span>조각 · 3단계</span></h1>
       <p class="lede">
-        잘라 낸 사진마다 대표 색과 결만 남겨 천 조각으로 물들이고, 기억의 무게만큼 크기를 나눠 한 장으로 잇습니다.
+        잘라 낸 사진마다 대표 색과 결만 남겨 천 조각으로 물들이고, 기억의 무게만큼 크기를 나눠 펼쳐 둡니다. 솔기는 직접 꿰매야 이어집니다.
       </p>
       <section class="intake" id="drop">
         <label class="pick">
@@ -26,7 +26,11 @@
         </div>
       </section>
       <p class="progress" id="progress" aria-live="polite"></p>
-      <figure class="quilt" id="quilt" hidden><canvas id="canvas"></canvas></figure>
+      <figure class="quilt" id="quilt" hidden>
+        <canvas id="canvas"></canvas>
+        <figcaption id="sew-status" aria-live="polite"></figcaption>
+        <p class="hint">조각 위에 마우스를 올리거나 길게 누르면 천 너머로 원래 사진이 비쳐요.</p>
+      </figure>
       <section id="ledger" hidden></section>
     </main>
     <script type="module" src="/src/quilt/main.ts"></script>
