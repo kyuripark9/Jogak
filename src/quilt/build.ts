@@ -35,7 +35,7 @@ export function buildQuilt(thumbs: Raster[], seed = 7): Quilt {
     // 씨실: 두 번째로 많은 색. 대표 색과 너무 같으면 대표 색을 살짝 어둡게
     const second = e.palette.find((s, k) => k > 0 && s.weight > 0.08) ?? main;
     const warp = dyed(main.lab);
-    const weft = second === main ? [warp[0] - 8, warp[1], warp[2]] as typeof warp : dyed(second.lab);
+    const weft = second === main ? [warp[0] - 4, warp[1], warp[2]] as typeof warp : dyed(second.lab);
     return { order: i, thumb, extracted: e, weighed: weighed[i], fabric: { fabric: e.fabric, warp, weft, seed: i * 7 + seed } };
   });
   const patchwork = layout(memories.map((m) => m.weighed.weight), QUILT_WIDTH, QUILT_HEIGHT, { seed });

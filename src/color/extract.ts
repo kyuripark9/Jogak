@@ -149,11 +149,17 @@ export function extract(thumb: Raster, opts: { k?: number; seed?: number; skipIc
 }
 
 /**
- * 천에 물들인 색. 사진 색을 그대로 쓰지 않고 채도를 낮추고 밝기를 가운데로 당긴다.
- * 오래된 기억처럼, 천연 염색처럼 바랜 색.
+ * 천에 물들인 색. 사진 색을 그대로 쓰지 않고 밝게 띄우고 채도를 덜어 파스텔로 만든다.
+ * 얇은 천에 옅게 물든 색이라 빛이 지나가며 색이 겹치고, 오래된 기억처럼 바래 있다.
+ * 밝기 순서는 남겨 둬서 어두운 장면은 조금 더 깊은 파스텔이 된다.
  */
-export function dyed(lab: Lab, fade = 0.38): Lab {
-  return [lab[0] + (62 - lab[0]) * fade * 0.6, lab[1] * (1 - fade), lab[2] * (1 - fade)];
+export function dyed(lab: Lab): Lab {
+  const L = 74 + (lab[0] - 55) * 0.28;
+  const c = Math.hypot(lab[1], lab[2]);
+  // 거의 무채색인 사진도 아주 옅게나마 따뜻한 기가 돌게 (생모시 빛)
+  const k = c > 1 ? Math.min(0.75, 32 / c) : 0;
+  const a = lab[1] * k, b = lab[2] * k + (c < 6 ? 4 : 0);
+  return [L, a, b];
 }
 
 /** 두 팔레트의 거리: 각 색을 상대 팔레트의 가장 가까운 색과 맞대어 비율로 평균 */

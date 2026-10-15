@@ -7,9 +7,10 @@ import type { Fabric } from '../color/extract.ts';
  * 날실은 사진의 대표 색, 씨실은 두 번째 색으로 물들여서 가까이 보면
  * 사진 속 다른 색이 실 사이로 비친다.
  *
- * - 삼베: 굵고 굵기가 고르지 않은 실, 성긴 엮음 (거칠고 어수선한 기억)
- * - 모시: 가늘고 성긴 엮음, 실 사이가 비어 뒤가 비친다 (맑고 옅은 기억)
- * - 명주: 아주 촘촘하고 매끈하며 빛을 받으면 은은하게 윤이 난다 (차분하고 깊은 기억)
+ * 세 천 모두 창에 건 보자기처럼 빛이 비치는 얇은 천이고, 결만 다르다.
+ * - 삼베: 굵기가 고르지 않은 실, 셋 중 가장 도톰함 (거칠고 어수선한 기억)
+ * - 모시: 가늘고 성긴 엮음, 가장 많이 비친다 (맑고 옅은 기억)
+ * - 명주: 촘촘하고 매끈하며 빛을 받으면 은은하게 윤이 난다 (차분하고 깊은 기억)
  */
 
 export interface FabricSpec {
@@ -32,12 +33,15 @@ interface Weave {
   grain: number;
   /** 윤기 (조각 전체에 한 번 흐르는 빛, render/quilt.ts에서 그림) */
   sheen: number;
+  /** 천 전체의 불투명도. 얇을수록 뒤의 빛과 이웃 조각이 비친다 */
+  opacity: number;
 }
 
 export const WEAVES: Record<Fabric, Weave> = {
-  sambe: { pitch: 6, fill: 0.84, slub: 0.35, gapAlpha: 0.6, grain: 9, sheen: 0 },
-  mosi: { pitch: 4, fill: 0.62, slub: 0.15, gapAlpha: 0.12, grain: 4, sheen: 0.04 },
-  myeongju: { pitch: 2, fill: 0.95, slub: 0.04, gapAlpha: 0.9, grain: 2, sheen: 0.12 },
+  // 모두 빛이 비치는 얇은 천. 삼베가 가장 도톰하고, 모시가 가장 성기고, 명주는 매끈하게 윤이 난다
+  sambe: { pitch: 4, fill: 0.8, slub: 0.4, gapAlpha: 0.45, grain: 5, sheen: 0, opacity: 0.66 },
+  mosi: { pitch: 3, fill: 0.6, slub: 0.18, gapAlpha: 0.15, grain: 3, sheen: 0.05, opacity: 0.56 },
+  myeongju: { pitch: 2, fill: 0.92, slub: 0.05, gapAlpha: 0.75, grain: 1.5, sheen: 0.14, opacity: 0.6 },
 };
 
 function hash(n: number) {
@@ -63,7 +67,7 @@ export function weaveTile(spec: FabricSpec, size = 192): Raster {
   const n = Math.max(2, Math.round(size / wv.pitch / 2) * 2);
   const pitch = size / n;
   // 실마다 색이 조금씩 다르다 (손으로 물들인 실)
-  const tone = (kind: number, i: number) => 1 + (hash(spec.seed * 31 + kind * 1013 + i) - 0.5) * 0.09;
+  const tone = (kind: number, i: number) => 1 + (hash(spec.seed * 31 + kind * 1013 + i) - 0.5) * 0.05;
   const thickness = (kind: number, i: number, along: number) =>
     wv.fill * (1 - wv.slub / 2 + wv.slub * noise1(spec.seed + kind * 97 + i * 13, (along / size) * 6, 6));
 
@@ -82,12 +86,12 @@ export function weaveTile(spec: FabricSpec, size = 192): Raster {
       if (inWarp && (warpOnTop || !inWeft)) {
         const t = tone(0, col % n);
         const u = (fx - 0.5) / (wWarp / 2);
-        shade = t * (1 - 0.18 * u * u) * (warpOnTop || !inWeft ? 1 : 0.9);
+        shade = t * (1 - 0.07 * u * u) * (warpOnTop || !inWeft ? 1 : 0.96);
         rgb = warp;
       } else if (inWeft) {
         const t = tone(1, row % n);
         const u = (fy - 0.5) / (wWeft / 2);
-        shade = t * (1 - 0.18 * u * u);
+        shade = t * (1 - 0.07 * u * u);
         rgb = weft;
       }
       const i = (y * size + x) * 4;
@@ -97,7 +101,7 @@ export function weaveTile(spec: FabricSpec, size = 192): Raster {
         out.data[i + 3] = 255;
       } else {
         // 실 사이 빈틈: 어둡고, 천에 따라 뒤가 비친다
-        for (let ch = 0; ch < 3; ch++) out.data[i + ch] = warp[ch] * 0.7 + g;
+        for (let ch = 0; ch < 3; ch++) out.data[i + ch] = warp[ch] * 0.9 + g;
         out.data[i + 3] = Math.round(255 * wv.gapAlpha);
       }
     }
