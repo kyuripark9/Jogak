@@ -1,6 +1,6 @@
 /**
- * DOM 없이 다루는 RGBA 픽셀 버퍼. ImageData와 같은 모양이라 브라우저에서는
- * ImageData를 그대로, Node 테스트에서는 합성 버퍼를 그대로 넘길 수 있다.
+ * DOM-free RGBA pixel buffer. Same shape as ImageData, so the browser can pass
+ * ImageData as-is and Node tests can pass synthetic buffers as-is.
  */
 export interface Raster {
   width: number;
@@ -15,18 +15,18 @@ export function createRaster(width: number, height: number): Raster {
 }
 
 /**
- * 띠 단위로 읽을 수 있는 원본. 긴 스크롤 캡처나 PDF 페이지를
- * 한 번에 캔버스에 올리지 않고 [y, y+h) 구간만 꺼내 보기 위한 약속.
+ * A source readable strip by strip: the contract for pulling out just [y, y+h)
+ * of a long scroll capture or PDF page instead of putting it all on one canvas.
  */
 export interface StripReader {
   width: number;
   height: number;
-  /** 한 번에 읽을 띠의 최대 높이 (모바일 사파리 캔버스 면적 한계에서 계산) */
+  /** Max strip height per read (derived from mobile Safari's canvas area limit) */
   stripHeight: number;
   readStrip(y: number, h: number): Promise<Raster>;
 }
 
-/** 메모리 위 Raster를 StripReader로 감싼다 (테스트, 합성 캡처용). */
+/** Wraps an in-memory Raster as a StripReader (for tests and synthetic captures). */
 export function rasterReader(r: Raster, stripHeight = r.height): StripReader {
   return {
     width: r.width,
@@ -47,7 +47,7 @@ export function cropRaster(r: Raster, x: number, y: number, w: number, h: number
   return out;
 }
 
-/** 상자 필터 축소. 조각은 색과 느낌만 남기면 되므로 작은 크기로 충분하다. */
+/** Box-filter downscale. Pieces only need color and feel, so a small size is enough. */
 export function downscale(r: Raster, maxWidth: number): Raster {
   if (r.width <= maxWidth) return r;
   const s = r.width / maxWidth;

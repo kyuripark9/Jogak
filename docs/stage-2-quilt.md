@@ -1,29 +1,29 @@
-# 2단계 · 색·질감 추출과 불규칙 조각보
+# Stage 2 · Color and texture extraction, and the irregular jogakbo
 
-`quilt.html`에서 캡처를 올리면(또는 "예시: 장면 사진 36장") 1단계로 잘라 낸 사진들을 천 조각으로 물들이고 한 장의 조각보로 잇는다.
+Upload a capture to `quilt.html` (or pick "Sample: 36 scene photos") and the photos cut out in stage 1 are dyed into scraps of cloth and joined into a single jogakbo (Korean patchwork wrapping cloth).
 
-## 메커니즘과 그 이유
+## Mechanisms and their reasons
 
-| 메커니즘 | 어떻게 | 왜 |
+| Mechanism | How | Why |
 |---|---|---|
-| 대표 색 | 썸네일 표본을 Lab 색공간에서 k-means(k=5, k-means++, seed 고정). 오른쪽 위 15%×20%는 뺌 | 기억은 장면보다 색으로 남는다. 아이콘 자리는 사진의 색이 아니다 |
-| 파스텔로 물들이기 | 밝기를 74 근처로 띄우고(밝기 순서는 유지) 채도를 최대 32로 덜어 냄 (`dyed`) | 얇은 천에 옅게 물든 색이라 빛이 지나가며 겹친다. 오래된 기억처럼 쨍한 색은 남지 않는다 |
-| 날실·씨실 | 날실은 가장 많은 색, 씨실은 두 번째 색 | 가까이 보면 사진 속 다른 색이 실 사이로 비친다 |
-| 천 고르기 | 결의 거칠기(이웃 밝기 차), 대비, 밝기, 채도로 점수. 세 천 모두 비치는 얇은 천이고 불투명도만 0.56~0.66으로 다름 | 어수선한 장면은 셋 중 도톰한 **삼베**, 맑고 옅은 장면은 가장 많이 비치는 **모시**, 차분하고 색이 깊은 장면은 윤이 나는 **명주** |
-| 기억의 무게 | 시간순으로 이웃한 게시물의 팔레트 거리가 가까우면 같은 날로 묶음. 무게 = 1 + 0.9·√(묶음 크기−1) | 인스타 캡처엔 날짜가 없어서 "그날 사진 수"를 색이 이어지는 정도로 추정. 넓이가 사진 수에 정비례하면 큰 날이 화면을 다 먹어서 완만하게 |
-| 불규칙 분할 | 천을 가위로 나누듯 볼록 다각형을 직선으로 반복해 자름. 무게 30~70% 사이 아무 데서나 나누고, 자를 위치는 이분 탐색으로 넓이를 정확히 맞춤 | 균일한 격자에 대한 반박. 크기는 제멋대로지만 넓이는 기억의 무게 그대로 |
-| 손으로 자른 선 | ±6° 기울기. 두 조각만 남은 네모는 30% 확률로 대각선 → 삼각 조각 | 전통 조각보의 삼각 조각, 자로 잰 듯하지 않은 손의 흔적 |
-| 시간 순서 | 앞쪽(오래된) 기억은 늘 자른 선의 같은 쪽 | 같은 날의 조각들이 서로 붙어 있고, 위에서 아래로 시간이 흐른다 |
-| 천 결 방향 | 조각마다 0° 또는 90°에 ±4° | 자투리는 원래 결이 제각각이다 |
-| 솔기 | 조각마다 같은 천으로 가장자리를 6단위 더 덮어 이웃과 겹치게 함. 겹친 자리만 두세 겹이 되어 색이 짙은 선으로 보임. 그 위에 천과 같은 계열의 작은 홈질 | 비치는 조각보에서 솔기가 선으로 보이는 이유 그대로. 손으로 이은 자리가 작품의 일부 |
-| 뒤에서 드는 빛 | 옅은 한지 바탕 + 왼쪽 위에서 번지는 빛, 조각 위에 screen으로 한 번 더 | 창에 건 보자기처럼 천이 빛을 머금는다. 4단계 빛 모드는 이 빛을 움직이게 만드는 것 |
+| Representative colors | k-means on thumbnail samples in Lab color space (k=5, k-means++, fixed seed). The top-right 15%×20% is excluded | Memories stay as colors more than as scenes. The icon spot isn't the photo's color |
+| Pastel dyeing | Lift lightness toward ~74 (keeping lightness order) and pull chroma down to at most 32 (`dyed`) | Thin cloth takes a pale dye, so light passes through and the colors layer. Like old memories, no vivid color survives |
+| Warp and weft | Warp is the most common color, weft the second | Up close, the photo's other colors show between the threads |
+| Choosing the cloth | Score on texture roughness (neighbor lightness difference), contrast, lightness, and chroma. All three cloths are sheer; only opacity differs, 0.56–0.66 | Busy scenes get **sambe** (hemp), the thickest of the three; clear, pale scenes get **mosi** (ramie), the most see-through; calm, deep-colored scenes get **myeongju** (silk), which has a sheen |
+| Memory weight | Chronologically adjacent posts with close palettes are grouped as the same day. Weight = 1 + 0.9·√(group size−1) | Instagram captures have no dates, so "photos that day" is estimated from how far the colors carry on. If area were directly proportional to photo count, big days would eat the screen, so it's softened |
+| Irregular partitioning | Repeatedly cut a convex polygon with straight lines, the way scissors divide cloth. Split anywhere between 30% and 70% of the weight, and binary-search the cut position to match area exactly | A rebuttal to the uniform grid. Sizes are arbitrary, but area is exactly the memory's weight |
+| Hand-cut lines | ±6° tilt. A rectangle with only two pieces left becomes a diagonal 30% of the time → triangle pieces | The triangle pieces of traditional jogakbo; the trace of a hand that didn't use a ruler |
+| Time order | Earlier (older) memories always stay on the same side of each cut | Pieces from the same day stay together, and time flows top to bottom |
+| Grain direction | Each piece 0° or 90°, ±4° | Scraps come with their grain going every which way |
+| Seams | Each piece covers 6 extra units at its edge with the same cloth so it overlaps its neighbor. Only the overlaps become two or three layers thick and read as darker lines. Small running stitches in a matching tone go on top | This is exactly why seams show as lines in a sheer jogakbo. Where the hand joined it is part of the work |
+| Backlight | Pale hanji (mulberry paper) ground + light spreading from the top left, applied once more over the pieces with screen | Like a wrapping cloth hung in a window, the cloth holds the light. Stage 4's light mode makes this light move |
 
-## 검증
+## Verification
 
-- `npm test`: k-means가 두 색과 비율을 찾는지, 아이콘 자리를 빼는지, 같은 입력이면 같은 결과인지, 느낌별 천 선택, 같은 날 묶기, 넓이가 무게에 1e-4 안으로 비례하고 빈틈 없이 채우는지.
-- `npm run e2e`: 예시 36장으로 조각보를 지어 넓이 비례(오차 < 0.1%)와 세 가지 천이 모두 나오는지 확인.
+- `npm test`: k-means finds two colors and their ratio, excludes the icon spot, gives the same result for the same input, chooses cloth by mood, groups the same day, and partitions with area proportional to weight within 1e-4 and no gaps.
+- `npm run e2e`: builds a jogakbo from the 36 samples and checks area proportionality (error < 0.1%) and that all three cloths appear.
 
-## 남은 판단
+## Open judgment calls
 
-- 색이 이어지는 것으로 "같은 날"을 추정하는 건 근사다. 다른 날이라도 비슷한 색이면 묶인다. 앨범 사진(EXIF 날짜)이 들어오면 날짜로 직접 묶는다.
-- 천 질감은 지금 Canvas 2D에서 JS로 짠 타일이다. 빛 모드(4단계)에서 투과를 다루려면 WebGL 셰이더로 옮길 계획.
+- Estimating "the same day" from continuing colors is an approximation. Different days with similar colors get grouped. When album photos (EXIF dates) come in, they will be grouped directly by date.
+- The cloth texture is currently a tile woven in JS on Canvas 2D. The plan is to move it to a WebGL shader to handle transmission in light mode (stage 4).

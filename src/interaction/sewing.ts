@@ -1,29 +1,29 @@
 import type { Patchwork, Pt, Seam } from '../layout/patchwork.ts';
 
 /**
- * 바느질 규칙. DOM 없이 상태만 다룬다.
+ * Sewing rules. State only, no DOM.
  *
- * - 솔기는 가위질의 반대 순서로만 꿰맬 수 있다. 양쪽 덩어리가 이미 하나로 이어져 있어야
- *   그 둘을 잇는 솔기를 꿰맬 수 있다. 실제 조각보도 작은 조각을 먼저 이어 줄을 만들고,
- *   줄을 이어 판을 만든다.
- * - 꿰매지 않은 덩어리는 자리에서 조금 비켜나 흐트러져 있다. 덩어리가 클수록 덜 흐트러진다
- *   (큰 판은 무게로 바닥에 붙는다). 다 이으면 흐트러짐이 없다.
- * - 땀은 손가락이 지나간 자리에만 생긴다. 천천히 그으면 땀이 짧고 고르며, 빨리 그으면
- *   길고 삐뚤다. 이어 붙이는 수고가 그대로 남아 그 조각보를 내 것으로 만든다.
+ * - Seams can be sewn only in the reverse order of the cuts: both sides must already be joined
+ *   into one cluster before the seam between them can be sewn. A real jogakbo, too, joins small pieces
+ *   into strips first, then strips into panels.
+ * - Unsewn clusters sit slightly scattered out of place. Larger clusters scatter less
+ *   (a big panel lies flat under its own weight). Fully joined, nothing is scattered.
+ * - Stitches appear only where the finger passes. Trace slowly for short, even stitches; trace fast
+ *   for long, crooked ones. The effort of joining stays visible, and that makes the jogakbo yours.
  */
 
 export interface Stitch {
-  /** 솔기 시작점에서의 거리 (조각보 단위) */
+  /** Distance from the seam's start (quilt units) */
   s0: number;
   s1: number;
-  /** 솔기에서 떨어진 거리 (땀 시작/끝) */
+  /** Offset from the seam (stitch start/end) */
   off0: number;
   off1: number;
 }
 
 export interface SeamState {
   sewn: boolean;
-  /** 땀이 지나간 구간 [s0, s1] (조각보 단위) */
+  /** Spans already stitched [s0, s1] (quilt units) */
   covered: [number, number][];
   stitches: Stitch[];
 }
@@ -31,7 +31,7 @@ export interface SeamState {
 export interface Transform {
   dx: number;
   dy: number;
-  /** 라디안. (cx, cy) 기준 회전 */
+  /** Radians. Rotation about (cx, cy) */
   rot: number;
   cx: number;
   cy: number;
@@ -58,7 +58,7 @@ function mergeIntervals(xs: [number, number][]): [number, number][] {
   return out;
 }
 
-/** [a, b] 중 아직 덮이지 않은 구간들 */
+/** Parts of [a, b] not yet covered */
 function uncovered(covered: [number, number][], a: number, b: number): [number, number][] {
   const out: [number, number][] = [];
   let x = a;
@@ -76,7 +76,7 @@ function uncovered(covered: [number, number][], a: number, b: number): [number, 
 export class Sewing {
   readonly pw: Patchwork;
   readonly seams: SeamState[];
-  /** 각 솔기 안쪽에 있는 솔기들 */
+  /** Seams nested inside each seam */
   private inner: number[][];
 
   constructor(pw: Patchwork) {
@@ -99,7 +99,7 @@ export class Sewing {
     return !this.seams[i].sewn && this.inner[i].every((j) => this.seams[j].sewn);
   }
 
-  /** 조각 p가 속한 덩어리 [from, to). 위에서부터 보며 처음 만나는 꿰맨 솔기의 범위 */
+  /** Cluster [from, to) containing piece p: the span of the first sewn seam found from the top */
   component(p: number): [number, number] {
     let best: [number, number] = [p, p + 1];
     let bestDepth = Infinity;
@@ -112,7 +112,7 @@ export class Sewing {
     return best;
   }
 
-  /** 덩어리가 놓인 흐트러짐. 같은 덩어리의 조각은 함께 움직인다 */
+  /** The cluster's scatter offset. Pieces in the same cluster move together */
   transformOf(p: number): Transform {
     const [from, to] = this.component(p);
     const n = to - from;
@@ -131,8 +131,8 @@ export class Sewing {
   }
 
   /**
-   * 솔기 i를 [s0, s1] 구간만큼 꿰맨다. speed는 조각보 단위/ms.
-   * 꿰매짐이 끝나 이번에 솔기가 완성되면 true.
+   * Sews seam i over [s0, s1]. speed is in quilt units/ms.
+   * Returns true if this call completes the seam.
    */
   sew(i: number, s0: number, s1: number, speed: number): boolean {
     const st = this.seams[i];
@@ -140,7 +140,7 @@ export class Sewing {
     const len = seamLength(this.pw.seams[i]);
     const a = Math.max(0, Math.min(s0, s1)), b = Math.min(len, Math.max(s0, s1));
     if (b - a < 0.5) return false;
-    // 빠를수록 땀이 길고, 솔기에서 멀어지며 삐뚤어진다
+    // The faster the trace, the longer the stitches, drifting off the seam and crooked
     const v = Math.min(1, speed / 1.2);
     const stitchLen = 3.2 + v * 7;
     const gap = 2.6 + v * 4;
@@ -155,7 +155,7 @@ export class Sewing {
     st.covered = mergeIntervals([...st.covered, [a, b]]);
     const cov = st.covered.reduce((p, [x, y]) => p + y - x, 0) / len;
     if (cov >= COMPLETE_AT) {
-      // 남은 짧은 틈은 바늘이 마저 채운다
+      // The needle fills in the short gaps left over
       for (const [u0, u1] of uncovered(st.covered, 0, len)) {
         for (let x = u0 + 1.3; x < u1; x += 5.8) {
           const k = st.stitches.length;
@@ -175,7 +175,7 @@ export class Sewing {
     return this.seams[i].covered.reduce((p, [x, y]) => p + y - x, 0) / len;
   }
 
-  /** 점에서 가장 가까운 꿰맬 수 있는 솔기 (거리 maxDist 안) */
+  /** The sewable seam nearest to a point (within maxDist) */
   nearestSewable(p: Pt, maxDist: number): { seam: number; s: number; dist: number } | null {
     let best: { seam: number; s: number; dist: number } | null = null;
     this.pw.seams.forEach((seam, i) => {

@@ -1,25 +1,25 @@
 import type { Raster, RGB, StripReader } from './raster.ts';
 
 /**
- * 원본을 띠 단위로 두 번 훑는다.
- * 1차: 바탕색(=칸 사이 여백 색) 추정. 2차: 픽셀마다 "바탕색인가"를 1비트로 기록.
- * 긴 캡처 전체를 RGBA로 들고 있지 않고 1비트 마스크(1/32 크기)만 남기기 위해서다.
+ * Sweeps the source twice, strip by strip.
+ * Pass 1: estimate the background color (= gutter color between cells). Pass 2: record 1 bit per pixel for "is background".
+ * This avoids holding a whole long capture as RGBA, keeping only a 1-bit mask (1/32 the size).
  */
 export interface ScanResult {
   width: number;
   height: number;
   bg: RGB;
-  /** 행마다 ceil(width/32)개의 32비트 워드. 비트 1 = 바탕색 */
+  /** ceil(width/32) 32-bit words per row. Bit 1 = background */
   mask: Uint32Array;
   stride: number;
-  /** 행별 바탕색 픽셀 수 */
+  /** Background pixel count per row */
   bgCount: Uint32Array;
 }
 
 export interface ScanOptions {
-  /** 바탕색 판정 허용 오차 (채널별 최대 차이). JPEG 재압축·PDF 안티앨리어싱 대비 */
+  /** Background match tolerance (max per-channel difference), to absorb JPEG recompression and PDF antialiasing */
   tolerance?: number;
-  /** 각 띠를 읽을 때마다 호출 (미리보기 타일 만들기 등) */
+  /** Called for each strip read (e.g. to build preview tiles) */
   onStrip?: (strip: Raster, y: number, pass: 1 | 2) => void;
   onProgress?: (done: number, total: number) => void;
 }
@@ -39,7 +39,7 @@ export async function scan(reader: StripReader, opts: ScanOptions = {}): Promise
   const tol = opts.tolerance ?? DEFAULT_TOLERANCE;
   const { width: W, height: H } = reader;
   const nStrips = Math.ceil(H / reader.stripHeight);
-  // 한 띠로 끝나는 일반 스크린샷은 두 번 디코딩하지 않도록 보관
+  // Keep single-strip screenshots around so they aren't decoded twice
   let cached: Raster | null = null;
   const read = async (y: number, h: number) => {
     if (cached) return cached;
@@ -48,7 +48,7 @@ export async function scan(reader: StripReader, opts: ScanOptions = {}): Promise
     return s;
   };
 
-  // 1차: 가로 전체가 한 색인 행(=가로 여백, 헤더의 빈 줄)의 색을 모은다
+  // Pass 1: collect colors of rows that are one color edge to edge (= horizontal gutters, blank header lines)
   const uniformHist = new Map<number, { n: number; r: number; g: number; b: number }>();
   const anyHist = new Map<number, number>();
   let done = 0;
@@ -83,12 +83,12 @@ export async function scan(reader: StripReader, opts: ScanOptions = {}): Promise
   if (best) {
     bg = [Math.round(best.r / best.n), Math.round(best.g / best.n), Math.round(best.b / best.n)];
   } else {
-    // 한 색인 행이 하나도 없으면 가장 흔한 색을 바탕으로 본다
+    // With no single-color rows at all, take the most common color as background
     const key = [...anyHist.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0x7fff;
     bg = [((key >> 10) & 31) * 8 + 4, ((key >> 5) & 31) * 8 + 4, (key & 31) * 8 + 4];
   }
 
-  // 2차: 바탕색 마스크
+  // Pass 2: background mask
   const stride = Math.ceil(W / 32);
   const mask = new Uint32Array(stride * H);
   const bgCount = new Uint32Array(H);
@@ -115,7 +115,7 @@ export async function scan(reader: StripReader, opts: ScanOptions = {}): Promise
   return { width: W, height: H, bg, mask, stride, bgCount };
 }
 
-/** y행의 [x0, x1) 구간 중 바탕색 픽셀 수 */
+/** Background pixel count in [x0, x1) of row y */
 export function countBg(s: ScanResult, y: number, x0: number, x1: number): number {
   let c = 0;
   const base = y * s.stride;

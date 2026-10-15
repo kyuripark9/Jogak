@@ -7,7 +7,7 @@ export default defineConfig({
   webServer: { command: 'npx vite --port 5179 --strictPort', url: 'http://localhost:5179/debug.html', reuseExistingServer: true },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
-    // 모바일 화면 폭 확인용 (엔진은 Chromium. 실제 iOS 사파리 한계는 기기에서 확인해야 함)
+    // Checks mobile screen width only (engine is Chromium; real iOS Safari limits must be checked on a device)
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
   ],
 });

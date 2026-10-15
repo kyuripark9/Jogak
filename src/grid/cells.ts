@@ -3,21 +3,21 @@ import { countBg, type ScanResult } from './scan.ts';
 import type { ClassifiedBand, Columns } from './detect.ts';
 
 export type CellKind =
-  /** 게시물 */
+  /** A post */
   | 'post'
-  /** 마지막 줄의 빈 자리 (바탕색뿐) */
+  /** Empty slot in the last row (background only) */
   | 'empty'
-  /** 아직 불러오지 않은 회색 칸 (PDF·웹 캡처에서 흔함) */
+  /** Gray cell not yet loaded (common in PDF and web captures) */
   | 'placeholder';
 
 export interface CellCrop {
   sourceIndex: number;
-  /** 원본 안 온전한 줄 번호 (0부터) */
+  /** Complete-row index within the source (from 0) */
   rowIndex: number;
   col: number;
   rect: { x: number; y: number; w: number; h: number };
   thumb: Raster;
-  /** 중복 비교용 8×8 RGB 평균 (가장자리 6%는 뺌) */
+  /** 8×8 RGB means for duplicate matching (outer 6% excluded) */
   signature: Float32Array;
   kind: CellKind;
 }
@@ -36,7 +36,7 @@ export async function extractCells(
 ): Promise<CellCrop[]> {
   const thumbWidth = opts.thumbWidth ?? 240;
   const out: CellCrop[] = [];
-  // 여러 줄을 한 띠로 묶어 읽어 디코딩/PDF 렌더 횟수를 줄인다
+  // Read several rows as one strip to cut down on decodes and PDF renders
   let i = 0;
   while (i < rows.length) {
     const start = rows[i].y0;
@@ -70,7 +70,7 @@ function cellKind(s: ScanResult, r: CellCrop['rect'], thumb: Raster): CellKind {
   let bg = 0, n = 0;
   for (let y = r.y; y < r.y + r.h; y += 3) { bg += countBg(s, y, r.x, r.x + r.w); n += r.w; }
   if (bg / n > 0.98) return 'empty';
-  // 거의 한 색 (표준편차가 아주 작음) → 로딩 전 자리 표시
+  // Nearly one color (tiny standard deviation) → not-yet-loaded placeholder
   const d = thumb.data;
   let sum = 0, sq = 0, m = 0;
   for (let i = 0; i < d.length; i += 4) {
@@ -103,7 +103,7 @@ export function signature(t: Raster): Float32Array {
   return sig;
 }
 
-/** 두 칸의 평균 채널 차이 (0~255) */
+/** Mean channel difference between two cells (0–255) */
 export function signatureDistance(a: Float32Array, b: Float32Array): number {
   let d = 0;
   for (let i = 0; i < a.length; i++) d += Math.abs(a[i] - b[i]);

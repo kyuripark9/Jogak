@@ -2,10 +2,10 @@ import { cropRaster } from './raster.ts';
 import { signature, signatureDistance, type CellCrop } from './cells.ts';
 
 /**
- * 스크린샷 여러 장을 한 줄로 잇는다. 캡처 사이에 겹친 줄은 칸 단위
- * 서명(signature)이 모두 같은지로 찾고, 겹침이 가장 긴 위치에서 이어 붙인다.
- * 줄 단위로만 비교하는 이유: 칸 하나는 우연히 닮을 수 있어도
- * 한 줄(보통 3칸)이 통째로 닮을 일은 거의 없다.
+ * Stitches multiple screenshots into one sequence of rows. Rows overlapping between captures are found
+ * by matching every per-cell signature, and captures are joined at the longest overlap.
+ * Why compare whole rows only: a single cell can look alike by chance,
+ * but a whole row (usually 3 cells) almost never does.
  */
 
 export interface GridRow {
@@ -14,10 +14,10 @@ export interface GridRow {
   cells: CellCrop[];
 }
 
-/** 캡처 위아래 끝에 잘려 보이는 줄. 겹친 줄이 없을 때 이어짐을 확인하는 데 쓴다 */
+/** A row cut off at a capture's top or bottom edge. Used to confirm continuity when no rows overlap */
 export interface PartialRow {
   cells: CellCrop[];
-  /** 잘린 줄이 온전한 줄 높이의 몇 분의 몇인지 */
+  /** What fraction of a full row's height the cut-off row shows */
   fraction: number;
 }
 
@@ -27,18 +27,18 @@ export interface SourceEdges {
 }
 
 export interface Join {
-  /** 이어 붙인 쪽 (뒤 캡처) */
+  /** The side being attached (the later capture) */
   sourceIndex: number;
-  /** 앞 결과와 겹쳐서 버린 줄 수 */
+  /** Rows discarded for overlapping the result so far */
   overlapRows: number;
-  /** 겹친 줄은 없지만 잘린 줄로 바로 이어짐을 확인함 */
+  /** No overlapping rows, but a cut-off row confirmed it continues directly */
   continuedByPartial?: boolean;
   warning?: string;
 }
 
 export interface StitchResult {
   rows: GridRow[];
-  /** `${sourceIndex}:${rowIndex}` → 앞 캡처의 어느 줄과 같은지 */
+  /** `${sourceIndex}:${rowIndex}` → which earlier capture row it duplicates */
   duplicates: Map<string, { sourceIndex: number; rowIndex: number }>;
   joins: Join[];
 }
@@ -55,7 +55,7 @@ export function rowsMatch(a: GridRow, b: GridRow): boolean {
   });
 }
 
-/** 온전한 줄의 [f0, f1) 높이 부분이 잘린 줄과 같은지 */
+/** Whether the [f0, f1) height slice of a full row matches a cut-off row */
 function partialMatches(full: GridRow, part: PartialRow, fromBottom: boolean): boolean {
   if (part.fraction < 0.15 || part.cells.length !== full.cells.length) return false;
   return full.cells.every((c, i) => {
@@ -77,7 +77,7 @@ export function stitch(sources: GridRow[][], edges: SourceEdges[] = []): StitchR
     if (next.length === 0) continue;
     const myEdges = edges[si];
     if (rows.length === 0) { rows.push(...next); prevEdges = myEdges; continue; }
-    // next[0]이 rows[j]에 겹치고 그 뒤로 rows 끝까지 모두 같은 가장 앞의 j
+    // The earliest j where next[0] overlaps rows[j] and everything through the end of rows matches
     let overlap = 0;
     for (let j = Math.max(0, rows.length - next.length); j < rows.length; j++) {
       const k = rows.length - j;
@@ -85,7 +85,7 @@ export function stitch(sources: GridRow[][], edges: SourceEdges[] = []): StitchR
       for (let t = 0; t < k && ok; t++) ok = rowsMatch(rows[j + t], next[t]);
       if (ok) { overlap = k; break; }
     }
-    // 뒤 캡처가 통째로 앞 결과 안에 있는 경우 (같은 화면을 두 번 찍음)
+    // The later capture lies entirely within the result so far (same screen captured twice)
     let contained = -1;
     if (overlap === 0) {
       for (let j = 0; j + next.length <= rows.length && contained < 0; j++) {

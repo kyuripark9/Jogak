@@ -26,9 +26,9 @@ async function drag(page: Page, a: number[], b: number[], steps = 24) {
 
 test.setTimeout(300_000);
 
-test('솔기를 따라 그어 끝까지 꿰매고, 올리면 원본이 비친다', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', '마우스 드래그로 확인');
-  // 조각보 전체가 화면 안에 들어오게 (화면 밖 좌표로는 마우스 이벤트가 가지 않는다)
+test('tracing along seams sews the whole quilt, and hovering reveals the original', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Verified with mouse drags');
+  // Fit the whole jogakbo on screen (mouse events don't reach off-screen coordinates)
   await page.setViewportSize({ width: 1280, height: 1700 });
   await page.goto('/quilt.html');
   await page.click('[data-sample="natural"]');
@@ -37,13 +37,13 @@ test('솔기를 따라 그어 끝까지 꿰매고, 올리면 원본이 비친다
   await expect(page.locator('body')).toHaveAttribute('data-sewn', '0');
   if (shotDir) await page.locator('#quilt canvas').screenshot({ path: join(shotDir, 'sew-0.png') });
 
-  // 큰 솔기는 처음엔 꿰매지지 않는다
+  // Large seams can't be sewn at first
   const first = await seams(page);
   const locked = first.find((s: any) => !s.sewable)!;
   await drag(page, locked.a, locked.b);
   await expect(page.locator('body')).toHaveAttribute('data-sewn', '0');
 
-  // 반만 그으면 아직 안 붙는다
+  // Tracing only half doesn't join it yet
   const half = first.find((s: any) => s.sewable)!;
   await drag(page, half.a, [(half.a[0] + half.b[0]) / 2, (half.a[1] + half.b[1]) / 2]);
   await expect(page.locator('body')).toHaveAttribute('data-sewn', '0');
@@ -60,7 +60,7 @@ test('솔기를 따라 그어 끝까지 꿰매고, 올리면 원본이 비친다
   await page.waitForTimeout(800);
   if (shotDir) await page.locator('#quilt canvas').screenshot({ path: join(shotDir, 'sew-done.png') });
 
-  // 조각 위에 올리면 원본이 비친다
+  // Hovering a piece reveals the original
   const center = await page.evaluate(() => {
     const st = (window as any).__stage;
     const p = st.sewing.pw.pieces[5].poly;

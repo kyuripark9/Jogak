@@ -1,16 +1,16 @@
 import { countBg, type ScanResult } from './scan.ts';
 
 /**
- * 그리드 감지. 칸 크기나 비율을 가정하지 않고, "칸 사이 여백은 바탕색이고
- * 양옆이 사진으로 막힌 가는 띠"라는 성질만으로 세로 여백선을 찾은 뒤
- * 행마다 그 여백선 위치가 바탕색인지로 그리드 행과 헤더 행을 가른다.
+ * Grid detection. Assumes no cell size or ratio; finds vertical gutters purely from the property
+ * "a gutter is a thin background-colored strip with photos on both sides",
+ * then splits grid rows from header rows by whether each row is background at those gutters.
  */
 
 export interface Gutter {
   /** [x0, x1) */
   x0: number;
   x1: number;
-  /** 이 위치가 여백으로 뽑힌 행의 비율 (0~1) */
+  /** Share of rows that voted this position a gutter (0–1) */
   strength: number;
 }
 
@@ -18,7 +18,7 @@ export interface Columns {
   left: number;
   right: number;
   gutters: Gutter[];
-  /** 칸별 [x0, x1) */
+  /** [x0, x1) per cell */
   cells: [number, number][];
   cellWidth: number;
   gutterWidth: number;
@@ -26,9 +26,9 @@ export interface Columns {
 
 export const RowKind = {
   Other: 0,
-  /** 가로 전체가 바탕색 (가로 여백 또는 빈 줄) */
+  /** Background edge to edge (horizontal gutter or blank line) */
   Gap: 1,
-  /** 세로 여백선이 바탕색이고 칸 안에 내용이 있는 행 */
+  /** Row whose vertical gutters are background and whose cells have content */
   Grid: 2,
 } as const;
 export type RowKind = (typeof RowKind)[keyof typeof RowKind];
@@ -52,7 +52,7 @@ export function detectColumns(s: ScanResult): Columns | null {
   const step = Math.max(1, Math.floor(H / 8000));
 
   for (let y = 0; y < H; y += step) {
-    // 대부분 바탕색인 행(헤더 글자 줄, 빈 줄)은 글자 사이 틈이 여백처럼 보이므로 투표에서 뺀다
+    // Skip mostly-background rows (header text lines, blank lines): gaps between letters look like gutters
     if (s.bgCount[y] > W * 0.6) continue;
     voters++;
     let x = 0;
@@ -74,7 +74,7 @@ export function detectColumns(s: ScanResult): Columns | null {
   if (voters < 20) return null;
 
   const frac = Array.from(votes, (v) => v / voters);
-  // 후보 여백: 투표율 0.3 이상이 이어진 구간
+  // Candidate gutters: runs with a vote share of 0.3 or more
   const cands: Gutter[] = [];
   for (let x = 0; x < W; ) {
     if (frac[x] < 0.3) { x++; continue; }
@@ -90,13 +90,13 @@ export function detectColumns(s: ScanResult): Columns | null {
   cands.sort((p, q) => q.strength - p.strength);
   const top = cands.slice(0, 8).sort((p, q) => p.x0 - q.x0);
 
-  // 그리드 행은 가장자리 위치가 정확히 같고, 헤더 행은 제각각이라 최빈값을 쓴다
+  // Grid rows share exact edge positions while header rows vary, so take the mode
   const left = mode(firsts);
   const right = mode(lasts);
   const usable = right - left;
   if (usable < W * 0.5) return null;
 
-  // 칸 너비가 서로 같아지는 여백 조합 중 투표가 가장 강한 것
+  // Among gutter combinations that yield equal cell widths, the one with the strongest votes
   let best: { gutters: Gutter[]; score: number } | null = null;
   for (let m = 1; m < 1 << top.length; m++) {
     const gs = top.filter((_, i) => m & (1 << i));
@@ -141,7 +141,7 @@ export function classifyRows(s: ScanResult, c: Columns): Uint8Array {
     if (ok && c.left > 2) ok = countBg(s, y, 0, c.left) >= c.left * 0.75;
     if (ok && W - c.right > 2) ok = countBg(s, y, c.right, W) >= (W - c.right) * 0.75;
     if (ok) {
-      // 헤더의 아이콘 줄처럼 거의 빈 행은 그리드가 아니다
+      // Nearly empty rows, like the header's icon row, aren't grid
       ok = c.cells.some(([a, b]) => 1 - countBg(s, y, a, b) / (b - a) >= 0.25);
     }
     kinds[y] = ok ? RowKind.Grid : RowKind.Other;
@@ -150,8 +150,8 @@ export function classifyRows(s: ScanResult, c: Columns): Uint8Array {
 }
 
 /**
- * Grid 행이 이어진 구간을 띠(band)로 묶는다. 사진 속 흰 부분 때문에 생긴
- * 짧은 Other 행 끊김은 이어 붙이고, 위아래가 무엇으로 막혔는지 기록한다.
+ * Groups runs of Grid rows into bands. Short breaks of Other rows caused by white areas in photos
+ * are bridged, and what bounds each band above and below is recorded.
  */
 export function findBands(kinds: Uint8Array, cellWidth: number): Band[] {
   const H = kinds.length;
@@ -183,9 +183,9 @@ function allKind(k: Uint8Array, a: number, b: number, kind: RowKind) {
 }
 
 /**
- * 칸 세로 비율(높이/너비). 1:1, 4:5, 3:4 어느 것도 가정하지 않고, 위아래가 모두
- * 가로 여백으로 막힌 띠들의 비율 중 가장 많이 겹치는 값을 고른다.
- * 0.85~1.6 밖은 헤더의 하이라이트 줄 같은 가짜 띠로 보고 뺀다.
+ * Cell aspect ratio (height/width). Assumes none of 1:1, 4:5, or 3:4; among bands bounded by
+ * horizontal gutters both above and below, picks the most agreed-upon ratio.
+ * Anything outside 0.85–1.6 is treated as a fake band, like the header's highlights row, and dropped.
  */
 export function estimateAspect(samples: { band: Band; cellWidth: number }[]): number | null {
   const ratiosOf = (pred: (b: Band) => boolean) =>
@@ -208,11 +208,11 @@ export type BandStatus = 'complete' | 'partial' | 'header-like';
 
 export interface ClassifiedBand extends Band {
   status: BandStatus;
-  /** 가로 여백 없이 붙은 여러 줄을 나눈 경우 원래 띠 */
+  /** The original band, when rows merged without a horizontal gutter were split apart */
   splitFrom?: [number, number];
 }
 
-/** 예상 칸 높이와 맞고 캡처 가장자리에 닿지 않은 띠만 온전한 줄로 인정한다. */
+/** Only bands matching the expected cell height and not touching a capture edge count as complete rows. */
 export function classifyBands(bands: Band[], c: Columns, aspect: number): ClassifiedBand[] {
   const expect = aspect * c.cellWidth;
   const tol = Math.max(3, expect * 0.03);
@@ -224,7 +224,7 @@ export function classifyBands(bands: Band[], c: Columns, aspect: number): Classi
       out.push({ ...b, status: 'complete' });
       continue;
     }
-    // 가로 여백이 뭉개져 두 줄 이상이 붙은 띠
+    // A band of two or more rows merged where the horizontal gutter blurred away
     const k = Math.round((h + c.gutterWidth) / (expect + c.gutterWidth));
     if (!touchesEdge && k >= 2 && Math.abs(h - (k * expect + (k - 1) * c.gutterWidth)) <= tol * k) {
       const step = (h + c.gutterWidth) / k;

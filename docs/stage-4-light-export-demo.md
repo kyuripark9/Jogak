@@ -1,33 +1,33 @@
-# 4단계 · 창에 걸기, 간직하기, 첫 화면
+# Stage 4 · Hanging it in the window, keeping it, and the first screen
 
-각 메커니즘이 왜 그렇게 동작하는지 한 줄씩.
+One line on why each mechanism behaves the way it does.
 
-## 빛 모드 (창에 걸어 빛에 비춰 보기)
+## Light mode ("Hold it up to the window light")
 
-- **창 뒤에서 오는 빛 + multiply 합성**: 조각보는 원래 창에 걸어 햇빛을 거르는 물건이라, 빛을 등지면 천이 겹친 시접만 진해져 이음새가 저절로 드러난다.
-- **빛의 위치가 포인터를 따라감**: 해가 움직이면 비치는 곳이 달라지듯, 어느 조각을 들여다보는지에 따라 그 조각이 밝아진다.
-- **바늘땀이 어두워짐**: 역광에서는 실이 빛을 막아 그림자처럼 보이기 때문.
-- **벽 모드에서만 윤기(sheen)**: 앞에서 오는 빛에서만 명주의 광택이 생긴다.
+- **Light from behind the window + multiply compositing**: a jogakbo (Korean patchwork wrapping cloth) was made to hang in a window and filter sunlight, so with the light behind it only the overlapping seam allowances darken and the joins reveal themselves.
+- **The light follows the pointer**: just as the bright spots shift when the sun moves, whichever piece you look into gets brighter.
+- **Stitches go dark**: against the light, thread blocks it and reads as shadow.
+- **Sheen only in wall mode ("Hang it on the wall")**: myeongju (silk) only shows its luster in light from the front.
 
-## PNG로 간직하기
+## "Keep it as a PNG"
 
-- **다 꿰맨 뒤에만 열림**: 이어지지 않은 조각은 아직 한 장의 조각보가 아니니까.
-- **지금 보고 있는 모드 그대로 저장**: 벽에 건 모습과 창에 건 모습은 다른 기억이라, 고른 쪽을 남긴다.
-- **3000 → 2400 → 1600px 순으로 시도**: 인쇄할 만큼 크게 만들되, 휴대폰 캔버스 한계에 걸리면 작게 다시 짓는다.
-- **브라우저 안에서 그려 바로 내려받기**: 사진은 어디에도 올라가지 않는다. 파일 이름은 `jogakbo-YYYYMMDD.png`, 꿰맨 날.
+- **Unlocks only once fully sewn ("Finish sewing to keep it")**: pieces that aren't joined aren't one jogakbo yet.
+- **Saves the mode you're looking at**: hung on the wall and held to the window are different memories, so it keeps the one you chose.
+- **Tries 3000 → 2400 → 1600px in order**: big enough to print, but rebuilt smaller if it hits a phone's canvas limit.
+- **Drawn in the browser and downloaded directly**: the photos are never uploaded anywhere. The file name is `jogakbo-YYYYMMDD.png`, the day it was sewn.
 
-## 첫 화면 (데모)
+## First screen (demo)
 
-- **업로드 없이 바로 조각보가 보임**: 처음 온 사람이 캡처를 준비하기 전에 무엇을 만드는지 먼저 본다.
-- **큰 솔기 몇 개만 남겨 둠** (`LEAVE_DEPTH = 2`): 거의 다 된 조각보의 마지막 몇 땀을 직접 꿰매며 바느질 규칙을 한 번에 익힌다.
-- **예시 사진은 `public/demo/manifest.json`으로 교체**: 목록의 `src`와 `date`(찍은 날, 오래된 순)만 바꾸면 본인 사진으로 바뀐다. 날짜가 있으면 같은 날끼리 무게를 묶는다.
+- **A jogakbo shows up right away, no upload needed**: first-time visitors see what they'll make before they get captures ready.
+- **Only a few large seams are left open** (`LEAVE_DEPTH = 2`): sewing the last few stitches of an almost-finished jogakbo teaches the sewing rules in one go.
+- **Sample photos are swapped via `public/demo/manifest.json`**: change only each entry's `src` and `date` (day taken, oldest first) and it becomes your own photos. With dates, weight is grouped by day.
 
-### 사진 바꾸는 법
+### How to swap the photos
 
-1. `public/demo/`에 사진을 넣는다 (가로 320~640px이면 충분, 어차피 240px로 줄여 색만 뽑는다).
-2. `manifest.json`을 `[{ "src": "a.jpg", "date": "2024-05-02" }, ...]` 형태로 고친다.
+1. Put photos in `public/demo/` (320–640px wide is plenty; they're shrunk to 240px anyway, only to pull colors).
+2. Edit `manifest.json` into the form `[{ "src": "a.jpg", "date": "2024-05-02" }, ...]`.
 3. `npm run build`.
 
-## 확인
+## Checks
 
-- `e2e/demo.spec.ts`: 첫 화면이 업로드 없이 펼쳐지고 저장이 잠겨 있음, 남은 솔기를 드래그로 꿰매면 저장이 열리고 3000px PNG가 내려받아짐, 창에 걸면 모드가 바뀜.
+- `e2e/demo.spec.ts`: the first screen unfolds without an upload and saving is locked; sewing the remaining seams by dragging unlocks saving and downloads a 3000px PNG; hanging it in the window switches the mode.

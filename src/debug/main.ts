@@ -3,8 +3,8 @@ import { loadFiles, stripHeightFor, type LoadedSource } from '../input/sources.t
 import { buildProfile, longCapture, screenshots } from '../synth/profile.ts';
 
 /**
- * 1단계 디버그 화면. 감지된 여백선과 줄을 원본 위에 겹쳐 보여 주고,
- * 잘라 낸 조각을 그리드 순서대로 늘어놓는다.
+ * Stage 1 debug view. Overlays the detected gutters and rows on the original,
+ * and lays out the cut pieces in grid order.
  */
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as T;
@@ -53,7 +53,7 @@ async function run(sources: LoadedSource[], errors: string[] = []) {
     progress.textContent = errors.join(' ') || 'No readable files.';
     return;
   }
-  // 띠를 읽을 때마다 미리보기 조각을 쌓아 둔다 (긴 캡처도 한 캔버스에 올리지 않기 위해)
+  // Stack a preview tile per strip read (so even long captures never sit on one canvas)
   const tiles: HTMLCanvasElement[][] = sources.map(() => []);
   const t0 = performance.now();
   const result = await analyze(
@@ -155,7 +155,7 @@ function renderSource(r: AnalysisResult, s: SourceAnalysis, si: number, tiles: H
   return fig;
 }
 
-/** 왼쪽 띠: 행마다 그리드 행 / 빈 줄 / 그 밖(헤더·상단바) 중 무엇으로 읽었는지 */
+/** Left ribbon: whether each pixel row was read as grid row / blank / other (header, top bar) */
 function rowRibbon(s: SourceAnalysis, tiles: HTMLCanvasElement[]) {
   const h = tiles.reduce((p, t) => p + t.height, 0) || 1;
   const c = el('canvas', { class: 'ribbon', title: 'Row classification' });
@@ -186,7 +186,7 @@ function overlay(r: AnalysisResult, s: SourceAnalysis, si: number) {
   const c = s.columns;
   const done = s.bands.filter((b) => b.status === 'complete');
   if (c && done.length) {
-    // 여백선은 실제로 잘라 낸 그리드 구간에만 긋는다
+    // Draw gutters only over the grid span that was actually cut
     const y0 = done[0].y0, y1 = done[done.length - 1].y1;
     for (const g of c.gutters) {
       o.append(svg('rect', { x: g.x0, y: y0, width: g.x1 - g.x0, height: y1 - y0, class: 'gutter' }));
@@ -221,7 +221,7 @@ function renderPieces(r: AnalysisResult) {
   const timeline = r.posts.length - pinned;
   for (const p of r.posts) {
     const isPinned = p.gridIndex < pinned;
-    // 그리드는 최신이 맨 앞. 고정 게시물을 뺀 나머지를 뒤집으면 시간 순서
+    // The grid puts the newest first; drop pinned posts and reverse the rest for chronological order
     const chrono = isPinned ? null : timeline - (p.gridIndex - pinned);
     const flags = [isPinned ? 'pinned' : '', p.cell.kind === 'placeholder' ? 'not loaded yet' : ''].filter(Boolean);
     const li = el(
@@ -243,7 +243,7 @@ function renderPieces(r: AnalysisResult) {
   box.hidden = false;
 }
 
-// ── 입력 ─────────────────────────────────────────────────────────
+// ── Input ─────────────────────────────────────────────────────────
 
 async function fromFiles(files: File[]) {
   progress.textContent = 'Opening files…';
@@ -267,7 +267,7 @@ drop.addEventListener('drop', (e) => {
   if (files.length) void fromFiles(files);
 });
 
-/** 합성 캡처는 메모리에서 바로 읽는다 (긴 캡처를 PNG로 만들 캔버스가 모바일에선 너무 크다) */
+/** Read synthetic captures straight from memory (a canvas big enough to PNG a long capture is too large on mobile) */
 function memorySource(name: string, r: Raster, kind: LoadedSource['kind']): LoadedSource {
   return { name, kind, reader: rasterReader(r, stripHeightFor(r.width)), dispose() {} };
 }

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 const shotDir = process.env.SHOT_DIR;
 
-test('예시 장면 사진 36장으로 조각보를 짓는다', async ({ page }, info) => {
+test('builds a jogakbo from 36 sample scene photos', async ({ page }, info) => {
   await page.goto('/quilt.html');
   await page.click('[data-sample="natural"]');
   await page.waitForSelector('body[data-state="done"]', { timeout: 100_000 });
@@ -12,7 +12,7 @@ test('예시 장면 사진 36장으로 조각보를 짓는다', async ({ page },
     const q = (window as any).__quilt;
     const total = q.patchwork.pieces.reduce((a: number, p: any) => a + p.area, 0);
     const wsum = q.memories.reduce((a: number, m: any) => a + m.weighed.weight, 0);
-    // 넓이가 무게에 비례하는지 (가장 큰 오차)
+    // Whether area is proportional to weight (worst-case error)
     const err = Math.max(...q.memories.map((m: any) => Math.abs(q.patchwork.pieces[m.order].area / total - m.weighed.weight / wsum)));
     return { total, err, fabrics: [...new Set(q.memories.map((m: any) => m.fabric.fabric))] };
   });

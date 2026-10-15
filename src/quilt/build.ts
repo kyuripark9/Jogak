@@ -4,9 +4,9 @@ import { weighByDates, weighByRuns, type Weighed } from '../layout/weight.ts';
 import { layout, type Patchwork } from '../layout/patchwork.ts';
 import type { FabricSpec } from '../render/fabric.ts';
 
-/** 사진 한 장 → 기억 한 조각 */
+/** One photo → one memory piece */
 export interface Memory {
-  /** 시간순 번호 (0 = 가장 오래된 기억) */
+  /** Chronological index (0 = oldest memory) */
   order: number;
   thumb: Raster;
   extracted: Extracted;
@@ -23,17 +23,17 @@ export const QUILT_WIDTH = 1000;
 export const QUILT_HEIGHT = 1250;
 
 /**
- * thumbs: 시간순(오래된 것 먼저)으로 넘긴다.
- * 인스타 그리드는 최신순이므로 부르는 쪽에서 뒤집고 고정 게시물을 뺀다.
+ * thumbs: pass in chronological order (oldest first).
+ * The Instagram grid is newest first, so the caller reverses it and drops pinned posts.
  */
 export function buildQuilt(thumbs: Raster[], seed = 7, dates?: string[]): Quilt {
-  // 인스타 캡처는 칸 오른쪽 위에 아이콘이 있지만, 날짜가 있는 사진(앨범·데모)에는 없다
+  // Instagram captures have an icon in each cell's top right; dated photos (album, demo) don't
   const extracted = thumbs.map((t, i) => extract(t, { seed: i + 1, skipIconCorner: !dates }));
   const weighed = dates ? weighByDates(dates) : weighByRuns(extracted.map((e) => e.palette));
   const memories = thumbs.map((thumb, i): Memory => {
     const e = extracted[i];
     const main = e.palette[0];
-    // 씨실: 두 번째로 많은 색. 대표 색과 너무 같으면 대표 색을 살짝 어둡게
+    // Weft: the second most common color; if too close to the main color, a slightly darker main
     const second = e.palette.find((s, k) => k > 0 && s.weight > 0.08) ?? main;
     const warp = dyed(main.lab);
     const weft = second === main ? [warp[0] - 4, warp[1], warp[2]] as typeof warp : dyed(second.lab);

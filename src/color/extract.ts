@@ -2,14 +2,14 @@ import type { Raster } from '../grid/raster.ts';
 import { chroma, deltaE, labToRgb, rgbToLab, type Lab, type RGB } from './lab.ts';
 
 /**
- * 사진 → 대표 색과 질감. 장면은 버리고 색과 느낌만 남긴다.
- * (기억은 시간이 지나면 장면보다 색과 느낌으로 남기 때문)
+ * Photo → dominant colors and texture. Drop the scene, keep only color and feel.
+ * (Over time a memory survives as color and feel more than as a scene)
  */
 
 export interface Swatch {
   lab: Lab;
   rgb: RGB;
-  /** 이 색이 차지한 비율 (0~1) */
+  /** Share of the image this color covers (0–1) */
   weight: number;
 }
 
@@ -18,13 +18,13 @@ export type Fabric = 'mosi' | 'sambe' | 'myeongju';
 export const FABRIC_NAMES: Record<Fabric, string> = { mosi: 'mosi (ramie)', sambe: 'sambe (hemp)', myeongju: 'myeongju (silk)' };
 
 export interface Feel {
-  /** 밝기 평균 (L, 0~100) */
+  /** Mean lightness (L, 0–100) */
   lightness: number;
-  /** 채도 평균 */
+  /** Mean chroma */
   chroma: number;
-  /** 결의 거칠기: 이웃 픽셀 밝기 차이 평균 */
+  /** Grain roughness: mean luminance difference between neighboring pixels */
   roughness: number;
-  /** 밝기 대비 (표준편차) */
+  /** Lightness contrast (standard deviation) */
   contrast: number;
 }
 
@@ -45,8 +45,8 @@ function rng(seed: number) {
 }
 
 /**
- * 표본을 모은다. 오른쪽 위 모서리는 인스타가 릴스·여러 장 아이콘을 얹는 자리라
- * 사진 색이 아니므로 뺀다.
+ * Collects samples. The top-right corner is where Instagram overlays its Reels and carousel icons,
+ * which aren't photo colors, so it's skipped.
  */
 function samples(t: Raster, maxSamples: number, skipIconCorner: boolean): Lab[] {
   const out: Lab[] = [];
@@ -62,9 +62,9 @@ function samples(t: Raster, maxSamples: number, skipIconCorner: boolean): Lab[] 
 }
 
 /**
- * k-means++ (Lab 공간). seed가 같으면 결과도 같다.
- * 거리는 제곱한 채로 비교한다 (순서만 필요하니 제곱근을 뺀다). 피드 한 장에 사진이 백 장 넘게 오므로
- * 사진마다 수십만 번 도는 이 부분이 조각보를 펼치는 시간의 대부분이다.
+ * k-means++ (in Lab space). Same seed, same result.
+ * Distances are compared squared (only ordering matters, so skip the sqrt). A feed brings 100+ photos,
+ * so this loop, run hundreds of thousands of times per photo, is most of the time it takes to lay out the jogakbo.
  */
 export function kmeans(points: Lab[], k: number, seed = 1, iterations = 14): Swatch[] {
   const n = points.length;
@@ -77,7 +77,7 @@ export function kmeans(points: Lab[], k: number, seed = 1, iterations = 14): Swa
   pick(Math.floor(rand() * n));
   const d2 = new Float64Array(n).fill(Infinity);
   while (C.length / 3 < Math.min(k, n)) {
-    // 새로 더한 중심만 보고 가장 가까운 거리를 줄여 간다
+    // Shrink each nearest distance using only the newly added center
     const j = C.length - 3, c0 = C[j], c1 = C[j + 1], c2 = C[j + 2];
     let sum = 0;
     for (let i = 0; i < n; i++) {
@@ -148,8 +148,8 @@ function measureFeel(t: Raster, pts: Lab[]): Feel {
 }
 
 /**
- * 느낌 → 천. 어수선하고 결이 많은 장면은 거친 삼베, 맑고 옅은 장면은 비치는 모시,
- * 차분하고 색이 깊은 장면은 매끈한 명주.
+ * Feel → fabric. Busy, heavily textured scenes become coarse sambe (hemp); clear, pale scenes sheer mosi (ramie);
+ * calm, deeply colored scenes smooth myeongju (silk).
  */
 export function chooseFabric(f: Feel): Fabric {
   const sambe = f.roughness / 9 + f.contrast / 40;
@@ -167,20 +167,20 @@ export function extract(thumb: Raster, opts: { k?: number; seed?: number; skipIc
 }
 
 /**
- * 천에 물들인 색. 사진 색을 그대로 쓰지 않고 밝게 띄우고 채도를 덜어 파스텔로 만든다.
- * 얇은 천에 옅게 물든 색이라 빛이 지나가며 색이 겹치고, 오래된 기억처럼 바래 있다.
- * 밝기 순서는 남겨 둬서 어두운 장면은 조금 더 깊은 파스텔이 된다.
+ * The color as dyed into cloth. Instead of the raw photo color, lift it and drain chroma into a pastel.
+ * Pale dye on thin cloth lets light layer the colors as it passes through, faded like an old memory.
+ * Lightness order is kept, so darker scenes become slightly deeper pastels.
  */
 export function dyed(lab: Lab): Lab {
   const L = 74 + (lab[0] - 55) * 0.28;
   const c = Math.hypot(lab[1], lab[2]);
-  // 거의 무채색인 사진도 아주 옅게나마 따뜻한 기가 돌게 (생모시 빛)
+  // Give even near-gray photos a faint warm cast (the tint of raw mosi)
   const k = c > 1 ? Math.min(0.75, 32 / c) : 0;
   const a = lab[1] * k, b = lab[2] * k + (c < 6 ? 4 : 0);
   return [L, a, b];
 }
 
-/** 두 팔레트의 거리: 각 색을 상대 팔레트의 가장 가까운 색과 맞대어 비율로 평균 */
+/** Distance between two palettes: match each color to its nearest in the other, averaged by share */
 export function paletteDistance(p: Swatch[], q: Swatch[]): number {
   const one = (a: Swatch[], b: Swatch[]) =>
     a.reduce((s, x) => s + x.weight * Math.min(...b.map((y) => deltaE(x.lab, y.lab))), 0);

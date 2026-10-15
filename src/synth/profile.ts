@@ -1,25 +1,25 @@
 import { createRaster, cropRaster, type Raster } from '../grid/raster.ts';
 
 /**
- * 검증용 가짜 인스타그램 프로필. 실제 캡처 없이도 자르기 규칙을 시험할 수 있도록
- * 헤더(프로필 사진, 소개, 버튼, 하이라이트, 탭), 세로형 칸, 고정 상단·하단 바를 그린다.
- * 단위는 아이폰 3배율 픽셀 (390pt → 1170px).
+ * Fake Instagram profile for verification. To test the cutting rules without real captures,
+ * it draws the header (profile photo, bio, buttons, highlights, tabs), portrait cells, and fixed top and bottom bars.
+ * Units are iPhone 3x pixels (390pt → 1170px).
  */
 
 export interface ProfileOptions {
   seed?: number;
   posts?: number;
-  /** 칸 높이/너비. 1, 1.25(4:5), 4/3(3:4) */
+  /** Cell height/width. 1, 1.25 (4:5), 4/3 (3:4) */
   aspect?: number;
   dark?: boolean;
   width?: number;
-  /** pt 단위 칸 여백 */
+  /** Cell gutter in pt */
   gutterPt?: number;
-  /** 로딩 전 회색 칸으로 그릴 게시물 번호 */
+  /** Post indices to draw as gray not-yet-loaded cells */
   placeholders?: number[];
   /**
-   * 'test': 무작위 색 덩어리 (자르기 검증용, 함정 포함)
-   * 'natural': 바다·숲·카페·밤거리 같은 장면 색. 같은 날 찍은 듯 같은 장면이 1~4장씩 이어진다
+   * 'test': random color blobs (for verifying cuts, traps included)
+   * 'natural': scene colors like sea, forest, cafe, night street; runs of 1–4 of the same scene, as if shot the same day
    */
   style?: 'test' | 'natural';
 }
@@ -89,7 +89,7 @@ class Painter {
       }
     }
   }
-  /** 글자 줄 흉내: 작은 사각형이 띄엄띄엄 이어진다 */
+  /** Mock line of text: small rectangles in spaced runs */
   text(x: number, y: number, maxW: number, size: number, c: C, rnd: () => number) {
     let cx = x;
     while (cx < x + maxW) {
@@ -115,11 +115,11 @@ export function buildProfile(o: ProfileOptions = {}): Profile {
   const soft: C = dark ? [54, 54, 54] : [239, 239, 239];
   const g = Math.round((o.gutterPt ?? 1) * S);
   const cw = Math.floor((W - 2 * g) / 3);
-  const extra = W - 2 * g - cw * 3; // 나머지 픽셀은 가운데 칸에
+  const extra = W - 2 * g - cw * 3; // Leftover pixels go to the middle cell
   const ch = Math.round(cw * aspect);
   const rows = Math.ceil(nPosts / 3);
 
-  // 헤더 높이 (pt): 프로필 줄 110 + 소개 74 + 버튼 50 + 하이라이트 112 + 탭 44
+  // Header height (pt): profile row 110 + bio 74 + buttons 50 + highlights 112 + tabs 44
   const headerPt = { profile: 110, bio: 74, buttons: 50, highlights: 112, tabs: 44 };
   const gridTop = Math.round((headerPt.profile + headerPt.bio + headerPt.buttons + headerPt.highlights + headerPt.tabs) * S);
   const H = gridTop + rows * ch + (rows - 1) * g + Math.round(40 * S);
@@ -128,7 +128,7 @@ export function buildProfile(o: ProfileOptions = {}): Profile {
   p.rect(0, 0, W, H, bg);
 
   let y = 0;
-  // 프로필 사진과 숫자
+  // Profile photo and counts
   p.circle(16 * S + 43 * S, y + 12 * S + 43 * S, 43 * S, [196, 150, 120]);
   for (let k = 0; k < 3; k++) {
     const bx = (130 + k * 86) * S;
@@ -136,18 +136,18 @@ export function buildProfile(o: ProfileOptions = {}): Profile {
     p.text(bx - 6 * S, y + 62 * S, 50 * S, 12 * S, ink, rnd);
   }
   y += headerPt.profile * S;
-  // 이름, 소개
+  // Name, bio
   p.text(16 * S, y, 120 * S, 13 * S, ink, rnd);
   p.text(16 * S, y + 22 * S, 330 * S, 13 * S, ink, rnd);
   p.text(16 * S, y + 44 * S, 220 * S, 13 * S, ink, rnd);
   y += headerPt.bio * S;
-  // 버튼 (팔로잉 | 메시지 | +) — 버튼 사이 틈이 여백선처럼 보이는 함정
+  // Buttons (Following | Message | +) — a trap: the gaps between buttons look like gutters
   const bw = (390 - 32 - 34 - 12) / 2;
   p.rect(16 * S, y + 6 * S, bw * S, 32 * S, soft);
   p.rect((16 + bw + 6) * S, y + 6 * S, bw * S, 32 * S, soft);
   p.rect((16 + 2 * bw + 12) * S, y + 6 * S, 34 * S, 32 * S, soft);
   y += headerPt.buttons * S;
-  // 하이라이트 동그라미 — 동그라미 사이 틈도 여백선처럼 보인다
+  // Highlight circles — the gaps between them look like gutters too
   for (let k = 0; k < 5; k++) {
     const cx = (16 + 32 + k * 80) * S;
     p.circle(cx, y + 40 * S, 33 * S, [200, 200, 200]);
@@ -155,7 +155,7 @@ export function buildProfile(o: ProfileOptions = {}): Profile {
     p.text(cx - 20 * S, y + 82 * S, 40 * S, 10 * S, ink, rnd);
   }
   y += headerPt.highlights * S;
-  // 탭 아이콘과 선택 밑줄
+  // Tab icons and the selected-tab underline
   for (let k = 0; k < 3; k++) {
     const cx = (65 + k * 130) * S;
     p.rect(cx - 11 * S, y + 11 * S, 22 * S, 22 * S, ink);
@@ -163,7 +163,7 @@ export function buildProfile(o: ProfileOptions = {}): Profile {
   }
   p.rect(0, gridTop - Math.round(1 * S), 130 * S, Math.round(1 * S), ink);
 
-  // 그리드. 'natural'이면 같은 장면이 1~4장씩 이어진다 (같은 날의 기억)
+  // Grid. With 'natural', the same scene repeats 1–4 times in a row (memories from one day)
   const scenes: number[] = [];
   while (scenes.length < nPosts) {
     const sc = Math.floor(rnd() * SCENES.length);
@@ -207,7 +207,7 @@ function paintScene(p: Painter, x: number, y: number, w: number, h: number, rnd:
   }
 }
 
-/** 데모용 장면 사진 한 장 */
+/** One scene photo for the demo */
 export function scenePhoto(w: number, h: number, scene: number, seed: number, noise = 0): Raster {
   const r = createRaster(w, h);
   paintScene(new Painter(r), 0, 0, w, h, rng(seed), SCENES[scene % SCENES.length], noise);
@@ -221,7 +221,7 @@ function paintPhoto(p: Painter, x: number, y: number, w: number, h: number, rnd:
   const blobs = Array.from({ length: 4 }, () => ({
     x: rnd() * w, y: rnd() * h, r: (0.1 + rnd() * 0.3) * w, c: [rnd() * 255, rnd() * 255, rnd() * 255],
   }));
-  // 함정 몇 가지: 바탕과 같은 색이 칸 가장자리에 닿는 사진, 아주 밝은 사진
+  // A few traps: photos where the background color touches the cell edge, and very bright photos
   const brightEdge = id % 7 === 3;
   const nearBg = id % 11 === 5;
   for (let yy = 0; yy < h; yy++) {
@@ -238,11 +238,11 @@ function paintPhoto(p: Painter, x: number, y: number, w: number, h: number, rnd:
       data[i] = r + n; data[i + 1] = g + n; data[i + 2] = b + n; data[i + 3] = 255;
     }
   }
-  // 릴스/여러 장 아이콘
+  // Reels/carousel icon
   if (id % 4 === 1) p.rect(x + w - 40, y + 20, 22, 22, [255, 255, 255]);
 }
 
-/** 화면 위아래에 고정된 상태바+이름줄, 하단 탭바를 덧그린다 */
+/** Paints the fixed status bar + name row at the top and the tab bar at the bottom */
 function paintChrome(p: Painter, W: number, H: number, S: number, dark: boolean, rnd: () => number, top: boolean, bottom: boolean) {
   const bg: C = dark ? [0, 0, 0] : [255, 255, 255];
   const ink: C = dark ? [245, 245, 245] : [38, 38, 38];
@@ -263,11 +263,11 @@ function paintChrome(p: Painter, W: number, H: number, S: number, dark: boolean,
 export interface Capture {
   name: string;
   raster: Raster;
-  /** 이 캡처 좌표 = 프로필 좌표 + offset (프로필 y가 화면에서 어디에 오는지) */
+  /** Capture coordinate = profile coordinate + offset (where profile y lands on screen) */
   offset: number;
 }
 
-/** 아이폰 화면 크기로 위에서부터 스크롤하며 찍은 스크린샷들 */
+/** iPhone-sized screenshots taken while scrolling down from the top */
 export function screenshots(pr: Profile, scrolls: number[], viewportH = 2532): Capture[] {
   const W = pr.raster.width, S = pr.scale;
   const top = Math.round(91 * S);
@@ -284,7 +284,7 @@ export function screenshots(pr: Profile, scrolls: number[], viewportH = 2532): C
   });
 }
 
-/** 스크롤 캡처 앱이 이어 붙인 긴 이미지 한 장 */
+/** One long image stitched together by a scroll-capture app */
 export function longCapture(pr: Profile, withChrome = true): Capture {
   const W = pr.raster.width, S = pr.scale;
   const top = withChrome ? Math.round(91 * S) : 0;
@@ -296,7 +296,7 @@ export function longCapture(pr: Profile, withChrome = true): Capture {
   return { name: 'long-scroll.png', raster: r, offset: top };
 }
 
-/** JPEG 재압축 흉내: 작은 노이즈 */
+/** Mock JPEG recompression: light noise */
 export function addNoise(r: Raster, amp: number, seed = 3): Raster {
   const rnd = rng(seed);
   const out = { ...r, data: new Uint8ClampedArray(r.data) };

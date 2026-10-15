@@ -5,11 +5,11 @@ import { Sewing, seamLength, type SeamState, type Transform } from '../interacti
 import { WEAVES, weaveTile } from './fabric.ts';
 
 /**
- * 정적인 조각보 그리기 (Canvas 2D). 창에 건 얇은 보자기처럼.
- * 1. 뒤에서 드는 빛: 아주 옅은 바탕에 한쪽에서 빛이 번진다. 얇은 천은 이 빛을 머금는다.
- * 2. 조각마다 짠 천을 반투명하게 깔고, 결 방향을 조금씩 틀어 놓는다 (자투리는 결이 제각각이니까).
- * 3. 시접: 조각이 이웃과 조금씩 겹쳐서 솔기 자리만 천이 두 겹, 세 겹이 되어 색이 짙어진다.
- *    실제 비치는 조각보에서 솔기가 선처럼 보이는 이유 그대로. 손으로 이은 자리가 작품의 일부.
+ * Static jogakbo rendering (Canvas 2D), like a thin bojagi (wrapping cloth) hung in a window.
+ * 1. Backlight: light spreads from one side over a very pale ground. Thin cloth holds this light.
+ * 2. Each piece's woven cloth is laid semi-transparent, its grain slightly turned (scraps never share a grain).
+ * 3. Seam allowance: pieces overlap their neighbors a little, so cloth doubles or triples only at seams and darkens.
+ *    Exactly why seams read as lines in a real translucent jogakbo. The hand-joined lines are part of the work.
  */
 
 function hash(n: number) {
@@ -37,14 +37,14 @@ function tileCanvas(q: Quilt, i: number) {
 function backdrop(ctx: CanvasRenderingContext2D, w: number, h: number) {
   ctx.fillStyle = '#f4efe6';
   ctx.fillRect(0, 0, w, h);
-  // 창에서 드는 빛: 왼쪽 위가 환하고 오른쪽 아래로 갈수록 살짝 가라앉는다
+  // Window light: bright at top left, settling slightly toward bottom right
   const g = ctx.createRadialGradient(w * 0.22, h * 0.12, 0, w * 0.22, h * 0.12, Math.hypot(w, h) * 0.95);
   g.addColorStop(0, 'rgba(255, 253, 247, 0.95)');
   g.addColorStop(0.55, 'rgba(250, 244, 234, 0.4)');
   g.addColorStop(1, 'rgba(214, 204, 190, 0.35)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
-  // 한지 섬유: 아주 옅게
+  // Hanji fibers, very faint
   ctx.lineWidth = Math.max(0.5, w / 2000);
   for (let i = 0; i < (w * h) / 1400; i++) {
     const x = hash(i * 3 + 1) * w, y = hash(i * 3 + 2) * h, a = hash(i * 3 + 3) * Math.PI;
@@ -57,25 +57,25 @@ function backdrop(ctx: CanvasRenderingContext2D, w: number, h: number) {
   }
 }
 
-/** 조각보 위에 그릴 바느질 상태. 없으면 다 꿰맨 모습 */
+/** Sewing state to draw on the jogakbo. Omitted means fully sewn */
 export interface QuiltView {
   sewing: Sewing;
-  /** 조각별 지금 놓인 자리 (애니메이션 중간값) */
+  /** Where each piece sits right now (mid-animation values) */
   transforms: Transform[];
-  /** 원본이 비쳐 보이는 조각과 그 정도 (0~1) */
+  /** The piece showing its original photo, and how much (0–1) */
   reveal: { index: number; alpha: number } | null;
   /**
-   * 'wall': 벽에 건 조각보 (천이 빛을 받아 반사)
-   * 'light': 창에 건 조각보 (빛이 뒤에서 천을 지나온다. 겹친 시접은 더 짙어진다)
+   * 'wall': jogakbo hung on a wall (the cloth reflects light)
+   * 'light': jogakbo hung in a window (light passes through from behind; overlapping seam allowances darken)
    */
   mode?: 'wall' | 'light';
-  /** 빛 모드에서 빛이 드는 자리 (조각보 단위) */
+  /** Where the light falls in light mode (quilt units) */
   light?: Pt;
 }
 
-/** 시접 너비 (조각보 단위). 이만큼 이웃 조각과 겹친다 */
+/** Seam allowance width (quilt units): how far a piece overlaps its neighbors */
 const SEAM_ALLOWANCE = 6;
-/** 둘레 여백 */
+/** Outer margin */
 export const QUILT_MARGIN = 44;
 
 const IDENTITY: Transform = { dx: 0, dy: 0, rot: 0, cx: 0, cy: 0 };
@@ -100,19 +100,19 @@ function thumbCanvas(q: Quilt, i: number) {
   return c;
 }
 
-/** 꿰맨 땀들. 솔기 a→b 방향 기준으로 s(거리), off(옆으로 떨어진 정도) */
+/** Sewn stitches, relative to seam direction a→b: s (distance along), off (sideways offset) */
 function drawSeam(ctx: CanvasRenderingContext2D, a: Pt, b: Pt, st: SeamState, s: number, light = false) {
   const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
   if (len < 1) return;
   const ux = (b[0] - a[0]) / len, uy = (b[1] - a[1]) / len, nx = -uy, ny = ux;
   ctx.lineCap = 'round';
   if (st.sewn) {
-    // 접힌 시접의 가장 짙은 자리
+    // The darkest line of the folded seam allowance
     ctx.strokeStyle = 'rgba(110, 86, 84, 0.16)';
     ctx.lineWidth = 0.8 * s;
     ctx.beginPath(); ctx.moveTo(a[0] * s, a[1] * s); ctx.lineTo(b[0] * s, b[1] * s); ctx.stroke();
   }
-  // 빛이 뒤에서 오면 실은 그림자처럼 어둡게 보인다
+  // Backlit, thread reads dark like a shadow
   ctx.strokeStyle = light ? 'rgba(96, 78, 70, 0.45)' : 'rgba(255, 252, 246, 0.6)';
   ctx.lineWidth = 0.75 * s;
   ctx.beginPath();
@@ -123,7 +123,7 @@ function drawSeam(ctx: CanvasRenderingContext2D, a: Pt, b: Pt, st: SeamState, s:
   ctx.stroke();
 }
 
-/** 시침질: 꿰맬 수 있는 솔기에 임시로 뜬 성긴 붉은 실. "여기를 이으세요" */
+/** Basting: loose temporary red thread on a sewable seam. "Join here" */
 function drawBasting(ctx: CanvasRenderingContext2D, a: Pt, b: Pt, s: number, progress: number) {
   ctx.save();
   ctx.strokeStyle = `rgba(178, 74, 62, ${0.78 - progress * 0.45})`;
@@ -135,8 +135,8 @@ function drawBasting(ctx: CanvasRenderingContext2D, a: Pt, b: Pt, s: number, pro
 }
 
 /**
- * 창. 빛이 드는 자리가 가장 밝고, 창살 그림자가 천 너머로 흐리게 비친다.
- * 조각보는 이 빛을 거르는 필터가 된다.
+ * The window. Brightest where the light falls, with the lattice shadow showing faintly through the cloth.
+ * The jogakbo becomes a filter for this light.
  */
 function windowLight(ctx: CanvasRenderingContext2D, w: number, h: number, lx: number, ly: number) {
   ctx.fillStyle = '#efe9df';
@@ -147,7 +147,7 @@ function windowLight(ctx: CanvasRenderingContext2D, w: number, h: number, lx: nu
   g.addColorStop(1, 'rgba(236, 228, 214, 0.6)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
-  // 창살: 넓고 흐린 줄 여러 겹으로 번지게
+  // Lattice: several wide, faint layered lines so it blurs
   for (let k = 0; k < 4; k++) {
     ctx.strokeStyle = `rgba(150, 136, 118, ${0.035})`;
     ctx.lineWidth = w * (0.012 + k * 0.012);
@@ -173,16 +173,16 @@ function cachedBackdrop(w: number, h: number) {
   return c;
 }
 
-/** 다 꿰맨 상태 (정적 그림, 내보내기용) */
+/** Fully sewn state (static image, for export) */
 export function finishedView(q: Quilt): QuiltView {
   const sewing = new Sewing(q.patchwork);
-  // 작은 솔기부터 차례로
+  // Smallest seams first
   const order = q.patchwork.seams.map((_, i) => i).sort((x, y) => q.patchwork.seams[y].depth - q.patchwork.seams[x].depth);
   for (const i of order) sewing.sew(i, 0, seamLength(q.patchwork.seams[i]), 0.2);
   return { sewing, transforms: q.patchwork.pieces.map(() => IDENTITY), reveal: null };
 }
 
-/** 캔버스 픽셀 → 조각보 단위 배율 */
+/** Canvas pixels per quilt unit */
 export function quiltScale(pixelWidth: number) {
   return pixelWidth / (QUILT_WIDTH + QUILT_MARGIN * 2);
 }
@@ -195,13 +195,13 @@ interface Frame {
   L: Pt;
 }
 
-/** 조각들. ctx는 조각보 원점(여백 안쪽)에 맞춰져 있어야 한다 */
+/** The pieces. ctx must be aligned to the jogakbo origin (inside the margin) */
 function drawPieces(ctx: CanvasRenderingContext2D, { q, view, s, light }: Frame) {
-  // 빛 모드: 천이 빛을 곱해서 거른다. 두 겹이 되는 시접은 저절로 더 짙어진다
+  // Light mode: cloth filters light by multiplying, so doubled seam allowances darken on their own
   const blend: GlobalCompositeOperation = light ? 'multiply' : 'source-over';
   for (const p of q.patchwork.pieces) {
     const pattern = ctx.createPattern(tileCanvas(q, p.index), 'repeat')!;
-    // 실 굵기가 화면 크기와 상관없이 같은 천처럼 보이도록, 결 방향은 조각마다 다르게
+    // Thread scale tracks the quilt so it reads as the same cloth at any screen size; grain direction varies per piece
     const grain = (hash(p.index * 97 + 5) < 0.5 ? 0 : 90) + (hash(p.index * 13) - 0.5) * 8;
     pattern.setTransform(new DOMMatrix().scaleSelf(s * 0.9).rotateSelf(grain));
     ctx.save();
@@ -212,8 +212,8 @@ function drawPieces(ctx: CanvasRenderingContext2D, { q, view, s, light }: Frame)
     const weave = WEAVES[q.memories[p.index].fabric.fabric];
     const reveal = view.reveal?.index === p.index ? view.reveal.alpha : 0;
     if (reveal > 0) {
-      // 원본이 천 너머로 비친다: 사진을 먼저 깔고 천을 얇게 덮는다.
-      // 창에 걸었을 땐 사진도 슬라이드 필름처럼 빛을 거른다 (곱하기)
+      // The original shows through the cloth: lay the photo first, then a thin layer of cloth over it.
+      // In the window, the photo also filters light like slide film (multiply)
       ctx.save();
       ctx.clip();
       const xs = p.poly.map((v) => v[0] * s), ys = p.poly.map((v) => v[1] * s);
@@ -229,7 +229,7 @@ function drawPieces(ctx: CanvasRenderingContext2D, { q, view, s, light }: Frame)
     ctx.globalAlpha = (light ? Math.min(1, weave.opacity + 0.25) : weave.opacity) * (1 - 0.4 * reveal);
     ctx.fillStyle = pattern;
     ctx.fill();
-    // 시접: 가장자리를 같은 천으로 한 번 더 덮어 안팎으로 겹치게 한다
+    // Seam allowance: cover the edge once more with the same cloth so it overlaps inside and out
     ctx.strokeStyle = pattern;
     ctx.lineWidth = SEAM_ALLOWANCE * s;
     ctx.lineJoin = 'round';
@@ -237,7 +237,7 @@ function drawPieces(ctx: CanvasRenderingContext2D, { q, view, s, light }: Frame)
     ctx.stroke();
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
-    // 윤기: 명주처럼 매끈한 천은 결 방향을 따라 넓고 흐린 빛이 한 번 지나간다 (반사광이라 빛 모드엔 없음)
+    // Sheen: smooth cloth like myeongju gets one wide, soft band of light along the grain (reflected light, so none in light mode)
     if (weave.sheen > 0 && !light) {
       const xs = p.poly.map((v) => v[0] * s), ys = p.poly.map((v) => v[1] * s);
       const g = ctx.createLinearGradient(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys));
@@ -252,7 +252,7 @@ function drawPieces(ctx: CanvasRenderingContext2D, { q, view, s, light }: Frame)
   }
 }
 
-/** 시침실과 땀 */
+/** Basting thread and stitches */
 function drawThreads(ctx: CanvasRenderingContext2D, { q, view, s, light }: Frame) {
   const base = ctx.getTransform();
   q.patchwork.seams.forEach((seam, i) => {
@@ -260,7 +260,7 @@ function drawThreads(ctx: CanvasRenderingContext2D, { q, view, s, light }: Frame
     ctx.setTransform(base);
     if (view.sewing.isSewable(i)) drawBasting(ctx, seam.a, seam.b, s, view.sewing.coverage(i));
     if (st.stitches.length) {
-      // 꿰맨 솔기는 그 덩어리와 함께 움직이고, 꿰매는 중인 솔기는 제자리
+      // Sewn seams move with their cluster; seams being sewn stay put
       if (st.sewn) withTransform(ctx, view.transforms[seam.from] ?? IDENTITY, s);
       drawSeam(ctx, seam.a, seam.b, st, s, light);
     }
@@ -268,7 +268,7 @@ function drawThreads(ctx: CanvasRenderingContext2D, { q, view, s, light }: Frame
   ctx.setTransform(base);
 }
 
-/** 뒤에서 비치는 빛: 빛 가까운 조각일수록 빛을 머금어 환해진다 */
+/** Backlight glow: pieces nearer the light hold more of it and brighten */
 function drawGlow(ctx: CanvasRenderingContext2D, { s, light, L }: Frame) {
   const M = QUILT_MARGIN;
   ctx.globalCompositeOperation = 'screen';
@@ -282,12 +282,12 @@ function drawGlow(ctx: CanvasRenderingContext2D, { s, light, L }: Frame) {
   ctx.globalCompositeOperation = 'source-over';
 }
 
-/** 빛 모드 층 캐시: 빛만 움직일 땐 천과 실을 다시 짜지 않는다 */
+/** Light-mode layer cache: when only the light moves, cloth and thread aren't rewoven */
 interface Layers {
   key: string;
-  /** 천이 빛을 얼마나 통과시키는지 (흰 바탕에 곱한 천) */
+  /** How much light the cloth lets through (cloth multiplied onto white) */
   cloth: HTMLCanvasElement;
-  /** 실 (투명 바탕) */
+  /** Thread (transparent background) */
   thread: HTMLCanvasElement;
 }
 const layerCache = new WeakMap<HTMLCanvasElement, Layers>();
@@ -313,9 +313,9 @@ function layer(c: HTMLCanvasElement | undefined, w: number, h: number) {
 
 export interface RenderOptions {
   /**
-   * 빛 모드에서 천과 실을 따로 떠 둔다. 빛은 천을 곱으로 지나가므로 (빛 × 천)
-   * 빛만 움직일 때는 미리 떠 둔 천 한 장을 곱하면 똑같은 그림이 된다.
-   * 화면에서만 쓴다. 내보내기처럼 큰 캔버스에선 메모리를 두 배로 먹으므로 끈다.
+   * In light mode, render cloth and thread into separate layers. Light passes through cloth by multiplication (light × cloth),
+   * so when only the light moves, multiplying one pre-rendered cloth layer gives the identical image.
+   * Screen only: on large canvases like export it doubles memory, so it's off.
    */
   layers?: boolean;
 }
@@ -327,7 +327,7 @@ export function renderQuilt(
   view: QuiltView = finishedView(q),
   opts: RenderOptions = {},
 ) {
-  // 둘레에 여백을 둬서 조각보 너머의 빛과 가장자리 단(시접이 겹친 테두리)이 보이게
+  // Leave a margin so the light beyond the jogakbo and its edge hem (where seam allowances overlap) stay visible
   const M = QUILT_MARGIN;
   const s = quiltScale(pixelWidth);
   const cw = Math.round((QUILT_WIDTH + M * 2) * s), ch = Math.round((QUILT_HEIGHT + M * 2) * s);

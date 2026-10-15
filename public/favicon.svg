@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- 조각 네 개와 꿰매는 중인 솔기 하나 -->
+  <!-- Four patches and one seam being sewn -->
   <rect width="32" height="32" rx="3" fill="#f3eee3"/>
   <path d="M3 3h14l-2 12H3z" fill="#dfe7d6"/>
   <path d="M17 3h12v15H15z" fill="#efd9cf"/>

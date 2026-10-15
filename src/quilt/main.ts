@@ -15,7 +15,7 @@ let result: AnalysisResult | null = null;
 let seed = 7;
 let stage: QuiltStage | null = null;
 const sewStatus = $('#sew-status');
-// 테스트·확인용: ?sewn=all 이면 다 꿰맨 상태로 시작
+// For tests and review: ?sewn=all starts fully sewn
 const startSewn = new URLSearchParams(location.search).get('sewn') === 'all';
 
 function rasterCanvas(r: Raster) {
@@ -43,7 +43,7 @@ async function run(sources: LoadedSource[], errors: string[] = []) {
 function sew() {
   if (!result) return;
   const pinned = Number(pinnedSel.value);
-  // 그리드는 최신순. 고정 게시물과 불러오기 전 칸을 빼고 뒤집으면 오래된 기억부터
+  // The grid is newest first; drop pinned posts and unloaded cells, then reverse to start from the oldest memory
   const thumbs = result.posts
     .filter((p) => p.gridIndex >= pinned && p.cell.kind === 'post')
     .map((p) => p.cell.thumb)
@@ -141,7 +141,7 @@ drop.addEventListener('drop', async (e) => {
 });
 
 pinnedSel.addEventListener('change', sew);
-// 같은 기억이라도 가위질은 매번 다르다
+// Same memories, different scissor cuts every time
 $('#reseed').addEventListener('click', () => { seed++; sew(); });
 
 $('[data-sample="natural"]').addEventListener('click', async () => {

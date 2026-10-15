@@ -1,8 +1,8 @@
 /**
- * 검증용 합성 캡처 파일을 만든다 (fixtures/out).
- * - 스크린샷 5장 (4:5 칸, 라이트)
- * - 긴 스크롤 캡처 PNG (3:4 칸, 다크, 2만 px 이상)
- * - 사파리 전체 페이지 PDF 흉내 (Chromium으로 긴 페이지 한 장짜리 PDF 인쇄)
+ * Builds synthetic capture files for verification (fixtures/out).
+ * - 5 screenshots (4:5 cells, light)
+ * - Long scroll capture PNG (3:4 cells, dark, over 20,000 px)
+ * - Mock Safari full-page PDF (Chromium prints a long page as a single-page PDF)
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -20,7 +20,7 @@ const longProfile = buildProfile({ posts: 120, aspect: 4 / 3, dark: true, seed: 
 const long = longCapture(longProfile);
 writeFileSync(join(out, 'long-scroll.png'), png(long.raster));
 
-// 사파리 '전체 페이지' PDF처럼: CSS 390px 폭의 긴 페이지 한 장
+// Like Safari's 'Full Page' PDF: one long page, 390 CSS px wide
 const pdfProfile = buildProfile({ posts: 36, aspect: 1.25, seed: 33, placeholders: [20, 21] });
 const pdfImg = longCapture(pdfProfile, false).raster;
 writeFileSync(join(out, 'pdf-source.png'), png(pdfImg));

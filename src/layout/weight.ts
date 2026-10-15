@@ -1,14 +1,14 @@
 import { paletteDistance, type Swatch } from '../color/extract.ts';
 
 /**
- * 기억의 무게. 인스타 캡처에는 날짜가 없어서 "그날 사진 수"를 직접 알 수 없다.
- * 대신 시간순으로 이웃한 게시물의 색이 비슷하면 같은 날·같은 자리에서 찍었다고 보고
- * 한 묶음으로 센다. 묶음이 클수록 그날은 무거운 기억이고, 그 조각들은 커진다.
- * (앨범 사진 입력이 생기면 EXIF 날짜로 같은 날을 직접 묶는다)
+ * Memory weight. Instagram captures carry no dates, so "photos that day" can't be known directly.
+ * Instead, chronologically adjacent posts with similar colors are treated as shot the same day
+ * in the same place and counted as one group. The bigger the group, the heavier that day's memory, and the larger its pieces.
+ * (Once album photos are supported, EXIF dates group same-day shots directly)
  */
 
 export interface Weighed {
-  /** 묶음 번호 (시간순) */
+  /** Group number (chronological) */
   group: number;
   groupSize: number;
   weight: number;
@@ -27,12 +27,12 @@ export function weighByRuns(palettes: Swatch[][], threshold = SAME_DAY_DISTANCE)
   for (const x of group) size.set(x, (size.get(x) ?? 0) + 1);
   return group.map((x) => {
     const n = size.get(x)!;
-    // 넓이가 사진 수에 정비례하면 큰 묶음이 화면을 다 먹으므로 완만하게 키운다
+    // Area linear in photo count would let big groups swallow the quilt, so grow it gently
     return { group: x, groupSize: n, weight: 1 + Math.sqrt(n - 1) * 0.9 };
   });
 }
 
-/** 날짜를 알 때 (앨범 사진의 EXIF, 데모 목록): 같은 날 찍은 사진 수가 그대로 무게 */
+/** When dates are known (album EXIF, demo list): the number of photos taken that day is the weight */
 export function weighByDates(dates: string[]): Weighed[] {
   const group: number[] = [];
   let g = 0;

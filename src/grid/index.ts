@@ -30,19 +30,19 @@ export interface SourceAnalysis {
   stripCount: number;
   bg: RGB | null;
   columns: Columns | null;
-  /** 행별 분류 (RowKind) — 디버그 띠 표시용 */
+  /** Per-row classification (RowKind) — for the debug ribbon */
   rowKinds: Uint8Array | null;
   bands: ClassifiedBand[];
-  /** 첫 온전한 줄의 위쪽 y. 그 위는 헤더로 보고 건너뛴다 */
+  /** Top y of the first complete row. Everything above is treated as header and skipped */
   headerEnd: number | null;
   cells: CellCrop[];
-  /** 첫 줄 위, 마지막 줄 아래에 잘려 보이는 줄 */
+  /** Cut-off rows above the first row and below the last */
   edges: SourceEdges;
   error?: string;
 }
 
 export interface Post {
-  /** 그리드 순서 (0 = 맨 위 왼쪽 = 가장 최근) */
+  /** Grid order (0 = top left = most recent) */
   gridIndex: number;
   cell: CellCrop;
 }
@@ -87,7 +87,7 @@ export async function analyze(inputs: SourceInput[], opts: AnalyzeOptions = {}):
     }
   }
 
-  // 칸 비율은 모든 캡처가 공유한다 (같은 계정의 그리드)
+  // All captures share one cell ratio (same account's grid)
   const aspect = estimateAspect(
     pre.flatMap((p) => (p.columns ? p.bands.map((band) => ({ band, cellWidth: p.columns!.cellWidth })) : [])),
   );

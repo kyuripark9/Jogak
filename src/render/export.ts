@@ -3,8 +3,8 @@ import type { Sewing } from '../interaction/sewing.ts';
 import { renderQuilt } from './quilt.ts';
 
 /**
- * 고해상도 PNG. 화면에 보이는 그대로가 아니라, 사용자가 꿰맨 땀 그대로를 큰 캔버스에 다시 그린다.
- * iOS 사파리는 캔버스 면적이 약 16.7M 픽셀을 넘으면 빈 그림을 주므로 폭을 줄여 가며 시도한다.
+ * High-resolution PNG. Rather than copying the screen, it redraws the user's own stitches on a large canvas.
+ * iOS Safari returns a blank image for canvases over ~16.7M pixels, so it retries at smaller widths.
  */
 export async function exportPng(q: Quilt, sewing: Sewing, mode: 'wall' | 'light', widths = [3000, 2400, 1600]): Promise<Blob> {
   for (const w of widths) {

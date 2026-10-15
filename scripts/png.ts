@@ -1,4 +1,4 @@
-/** 의존성 없는 RGBA PNG 인코더 (합성 이미지 저장용) */
+/** Dependency-free RGBA PNG encoder (for saving synthetic images) */
 import { deflateSync } from 'node:zlib';
 import type { Raster } from '../src/grid/raster.ts';
 

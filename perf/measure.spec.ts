@@ -1,6 +1,6 @@
 import { test } from '@playwright/test';
 
-/** 성능 측정 (테스트가 아니라 숫자를 찍는다). CPU를 4배 느리게 해서 보통 휴대폰을 흉내 낸다. */
+/** Performance measurement (prints numbers, not a test). A 4x CPU slowdown mimics an average phone. */
 test.setTimeout(300_000);
 
 for (const throttle of [1, 4]) {
@@ -30,7 +30,7 @@ for (const throttle of [1, 4]) {
         const { exportPng } = await import('/src/render/export.ts');
         const st = (window as any).__stage;
         const a = performance.now();
-        // 다 꿰맨 모습을 가정하고 직접 그린다
+        // Draw directly, assuming everything is sewn
         const q = (window as any).__quilt;
         if (!q) return -2;
         await exportPng(q, st.sewing, 'wall');

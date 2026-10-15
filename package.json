@@ -2,7 +2,7 @@
   "name": "jogak",
   "private": true,
   "version": "0.1.0",
-  "description": "조각 — 기억을 꿰매는 조각보 앨범 (브라우저 전용 정적 웹)",
+  "description": "Jogak — a jogakbo patchwork album you sew from your memories (browser-only static site)",
   "type": "module",
   "scripts": {
     "dev": "vite",

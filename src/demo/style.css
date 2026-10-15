@@ -1,7 +1,7 @@
 /*
- * 첫 화면. 휴대폰에선 위에서 아래로 (소개 → 조각보 → 손짓),
- * 넓은 화면에선 조각보를 한눈에 보이게 세우고 소개와 손짓을 옆에 둔다.
- * 꿰매는 동안 남은 솔기 수와 버튼이 늘 눈에 들어와야 하니까.
+ * Landing page. On phones it runs top to bottom (intro → jogakbo → gestures);
+ * on wide screens the jogakbo stands fully in view with the intro and gestures beside it,
+ * because the remaining seam count and buttons must stay visible while sewing.
  */
 .demo { max-width: 720px; }
 .demo .lede { margin-bottom: 20px; }
@@ -26,7 +26,7 @@
   .demo header { grid-area: head; padding-top: 8px; }
   .demo .quilt { grid-area: quilt; }
   .demo .side { grid-area: side; }
-  /* 조각보 전체가 한 화면에 들어오도록 화면 높이에 맞춘다 (1088 : 1338은 여백 포함 비율) */
+  /* Fit to viewport height so the whole jogakbo fits on one screen (1088 : 1338 is the ratio including margins) */
   .demo .quilt canvas { width: min(720px, calc((100svh - 96px) * 1088 / 1338)); }
   .demo #sew-status { margin-top: 0; }
 }

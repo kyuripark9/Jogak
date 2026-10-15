@@ -5,18 +5,18 @@ import { Sewing, seamLength } from '../interaction/sewing.ts';
 import { bindControls } from '../app/controls.ts';
 
 /**
- * 첫 화면. 아무것도 올리지 않아도 조각보가 바로 보인다.
- * 거의 다 이어 둔 채로 마지막 큰 솔기 몇 개만 남겨, 방문자가 직접 꿰매어 완성하게 한다.
- * 사진은 public/demo/manifest.json 목록을 바꾸면 교체된다 (오래된 순, 찍은 날짜).
+ * Landing page. A jogakbo shows up right away, with nothing uploaded.
+ * It comes almost fully joined, leaving the last few large seams for visitors to sew and finish themselves.
+ * Swap the photos by editing the list in public/demo/manifest.json (oldest first, with date taken).
  */
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as T;
 const status = $('#sew-status');
-/** 이 깊이보다 얕은(큰) 솔기는 방문자 몫으로 남긴다 */
+/** Seams shallower (larger) than this depth are left for the visitor */
 const LEAVE_DEPTH = 2;
 const THUMB = 240;
 
-/** 사진 한 장 → 색을 뽑을 작은 그림. 줄이는 일은 브라우저에 맡긴다 (240px이면 색과 결이 충분하다) */
+/** One photo → a small image to pull colors from. The browser does the downscaling (240px is plenty for color and grain) */
 async function loadRaster(src: string): Promise<Raster> {
   const img = new Image();
   img.src = src;

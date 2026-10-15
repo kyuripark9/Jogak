@@ -1,9 +1,9 @@
 /**
- * 불규칙한 조각보 분할. 천 한 장을 가위로 나누듯 다각형을 직선으로 반복해 자른다.
- * - 시간 순서를 지킨다: 앞쪽(오래된) 기억은 늘 자른 선의 같은 쪽으로 간다.
- * - 넓이는 기억의 무게에 정확히 비례한다 (자를 위치를 이분 탐색으로 맞춤).
- * - 손으로 자른 천처럼 선이 조금씩 기울고, 가끔은 대각선으로 잘라 삼각 조각이 생긴다.
- *   균일한 격자에 대한 반박.
+ * Irregular jogakbo partition. Repeatedly cuts a polygon with straight lines, like scissors through one cloth.
+ * - Preserves time order: earlier (older) memories always fall on the same side of each cut.
+ * - Area is exactly proportional to memory weight (cut position found by binary search).
+ * - Lines tilt slightly like hand-cut cloth, and occasional diagonal cuts make triangles.
+ *   A rebuttal to the uniform grid.
  */
 
 export type Pt = [number, number];
@@ -18,9 +18,9 @@ export interface Piece {
 export interface Seam {
   a: Pt;
   b: Pt;
-  /** 자른 순서 (먼저 자른 큰 솔기일수록 작다) */
+  /** Cut order (smaller for larger seams cut earlier) */
   depth: number;
-  /** 이 솔기가 잇는 두 덩어리: 조각 [from, mid)와 [mid, to) */
+  /** The two clusters this seam joins: pieces [from, mid) and [mid, to) */
   from: number;
   mid: number;
   to: number;
@@ -35,9 +35,9 @@ export interface Patchwork {
 
 export interface LayoutOptions {
   seed?: number;
-  /** 손으로 자른 기울기 (도) */
+  /** Hand-cut tilt (degrees) */
   maxTilt?: number;
-  /** 두 조각만 남았을 때 대각선으로 자를 확률 */
+  /** Chance of a diagonal cut when only two pieces remain */
   diagonalChance?: number;
 }
 
@@ -65,7 +65,7 @@ function bbox(p: Poly) {
   return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
 }
 
-/** 볼록 다각형을 n·x <= c 쪽과 나머지로 자른다 */
+/** Splits a convex polygon into the n·x <= c side and the rest */
 export function cut(p: Poly, n: Pt, c: number): [Poly, Poly, Pt[]] {
   const a: Poly = [], b: Poly = [], hits: Pt[] = [];
   for (let i = 0; i < p.length; i++) {
@@ -82,7 +82,7 @@ export function cut(p: Poly, n: Pt, c: number): [Poly, Poly, Pt[]] {
   return [a, b, hits];
 }
 
-/** 방향 n으로 자를 때 앞쪽 넓이 비율이 ratio가 되는 c */
+/** The c at which a cut along direction n leaves `ratio` of the area on the near side */
 function cutAt(p: Poly, n: Pt, ratio: number): number {
   const proj = p.map((q) => n[0] * q[0] + n[1] * q[1]);
   let lo = Math.min(...proj), hi = Math.max(...proj);
@@ -108,7 +108,7 @@ export function layout(weights: number[], width: number, height: number, opts: L
       return;
     }
     const total = weights.slice(from, to).reduce((a, b) => a + b, 0);
-    // 반으로 딱 나누지 않고 무게 30~70% 사이 아무 데서나 나눈다 (자투리처럼)
+    // Don't split exactly in half; split anywhere between 30–70% of the weight (like scraps)
     let acc = 0;
     const options: number[] = [];
     for (let k = from + 1; k < to; k++) {
@@ -117,7 +117,7 @@ export function layout(weights: number[], width: number, height: number, opts: L
       if (r >= 0.3 && r <= 0.7) options.push(k);
     }
     if (options.length === 0) {
-      // 무게가 한쪽에 몰렸을 때는 가장 고른 지점
+      // When weight is lopsided, take the most even split point
       let best = from + 1, bd = Infinity;
       acc = 0;
       for (let k = from + 1; k < to; k++) {
@@ -134,11 +134,11 @@ export function layout(weights: number[], width: number, height: number, opts: L
     const w = b.x1 - b.x0, h = b.y1 - b.y0;
     let n: Pt;
     if (to - from === 2 && Math.max(w, h) / Math.min(w, h) < 1.5 && rand() < diag) {
-      // 대각선과 나란히 자른다 → 삼각 조각 (n은 자르는 선의 법선)
+      // Cut parallel to a diagonal → triangles (n is the cut line's normal)
       const l = Math.hypot(w, h);
       n = rand() < 0.5 ? [h / l, -w / l] : [h / l, w / l];
     } else {
-      // 긴 쪽을 가로지르게 자른다. 가늘수록 덜 기울인다
+      // Cut across the long side; the thinner the piece, the less the tilt
       const tilt = (rand() * 2 - 1) * maxTilt * Math.min(1, Math.min(w, h) / Math.max(w, h) + 0.3);
       const angle = (w >= h ? 0 : Math.PI / 2) + tilt;
       n = [Math.cos(angle), Math.sin(angle)];

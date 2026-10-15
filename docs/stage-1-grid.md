@@ -1,60 +1,60 @@
-# 1단계 · 인스타 캡처 그리드 자르기
+# Stage 1 · Cutting up the Instagram capture grid
 
-`debug.html`에서 캡처를 올리면 감지한 여백선과 줄을 원본 위에 겹쳐 그리고, 잘라 낸 조각을 그리드 순서대로 늘어놓는다.
+Upload a capture to `debug.html` and it draws the detected gutters and rows over the original, then lays out the cut pieces in grid order.
 
-## 흐름
+## Flow
 
 ```
-파일 ─▶ 입력 파이프라인 (src/input) ─▶ StripReader (띠 단위로 읽기)
+file ─▶ input pipeline (src/input) ─▶ StripReader (reads strip by strip)
                                           │
         ┌─────────────────────────────────┘
         ▼
-  scan       바탕색 추정 → 픽셀마다 "바탕색인가" 1비트 마스크
-  columns    짧고 양옆이 막힌 바탕색 구간을 행마다 투표 → 세로 여백선
-  rows       행 분류: 그리드 행 / 빈 줄(가로 여백) / 그 밖(헤더·상단바)
-  bands      그리드 행이 이어진 구간 = 한 줄 후보
-  aspect     모든 캡처의 온전한 줄에서 칸 비율(높이/너비)을 하나로 정함
-  classify   비율이 맞고 캡처 끝에 닿지 않은 줄만 "온전한 줄"
-  cells      온전한 줄을 칸으로 잘라 썸네일 + 8×8 색 서명
-  stitch     캡처 사이 겹친 줄을 서명으로 찾아 한 번만 남김
+  scan       estimate background color → 1-bit "is it background?" mask per pixel
+  columns    each row votes for short background runs bounded on both sides → vertical gutters
+  rows       classify rows: grid row / blank row (horizontal gutter) / other (header, status bar)
+  bands      a run of consecutive grid rows = one candidate row of cells
+  aspect     settle one cell ratio (height/width) from the full rows of all captures
+  classify   only rows with the right ratio that don't touch a capture edge are "full rows"
+  cells      cut full rows into cells: thumbnail + 8×8 color signature
+  stitch     find rows repeated across captures by signature and keep them once
 ```
 
-각 메커니즘이 왜 그렇게 동작하는지:
+Why each mechanism behaves the way it does:
 
-- **칸 크기를 가정하지 않는다.** 칸 너비는 여백선 사이 거리, 칸 높이는 가로 여백 사이 거리로만 정한다. 1:1, 4:5, 3:4 모두 같은 코드로 나온다.
-- **여백선은 "바탕색 + 가늘다 + 양옆이 사진"으로 찾는다.** 칸 수도 고정하지 않고, 칸 너비가 서로 같아지는 여백 조합 중 투표가 가장 강한 것을 고른다.
-- **헤더는 따로 찾지 않고 "그리드가 아닌 것"으로 버린다.** 첫 온전한 줄 위쪽이 전부 헤더다. 헤더 모양이 바뀌어도 규칙이 깨지지 않는다.
-- **그리드 순서 = 최신순.** 시간순은 그 반대다. 고정 게시물은 디버그 화면에서 "맨 앞 N개"로 시간순에서 뺀다.
+- **No assumed cell size.** Cell width comes only from the distance between gutters, cell height only from the distance between horizontal gutters. 1:1, 4:5, and 3:4 all come out of the same code.
+- **Gutters are found as "background color + thin + photo on both sides."** The column count isn't fixed either: of the gutter combinations that give equal cell widths, the one with the strongest vote wins.
+- **The header isn't detected; it's discarded as "not grid."** Everything above the first full row is header, so the rule survives header redesigns.
+- **Grid order = newest first.** Chronological order is the reverse. Pinned posts are dropped from the timeline on the debug screen with "First N".
 
-## 실패 사례와 처리
+## Failure cases and handling
 
-| 상황 | 왜 틀리기 쉬운가 | 처리 |
+| Situation | Why it's easy to get wrong | Handling |
 |---|---|---|
-| 헤더 버튼·하이라이트 줄 | 버튼 사이 틈, 동그라미 사이 틈이 여백선처럼 보인다 | 세로 여백 위치가 그리드 여백과 다르면 "그 밖" 행. 같더라도 띠 높이가 칸 비율(0.85~1.6)에 안 맞으면 버림 |
-| 헤더 글자 줄 | 글자 사이 틈이 짧은 바탕색 구간이라 투표를 흐린다 | 바탕색이 60% 넘는 행은 투표에서 뺌. 좌우 끝 위치도 중앙값이 아니라 최빈값 (헤더 행은 제각각, 그리드 행은 정확히 같음) |
-| 탭 아이콘 줄, 선택 밑줄 | 그리드 바로 위에 붙어 있다 | 칸 안 내용이 25% 미만이면 그리드 행이 아님. 밑줄이 위를 막아도 높이가 맞으면 온전한 줄로 인정 |
-| 상단 상태바·이름줄, 하단 탭바에 가린 줄 | 줄이 잘려 있다 | 예상 칸 높이보다 3% 넘게 짧거나 캡처 끝에 닿으면 "잘린 줄"로 버림 |
-| 스크린샷 사이 중복 줄 | 같은 게시물이 두 번 잘린다 | 줄 단위(3칸 모두)로 서명을 비교해 앞 결과 끝과 가장 길게 겹치는 위치에서 이어 붙임. 같은 화면을 두 번 찍은 경우도 통째로 뺌 |
-| 겹친 온전한 줄이 없는 두 장 | 사이에 빠진 줄이 있는지 알 수 없다 | 앞 캡처 아래 잘린 줄 ↔ 뒤 캡처 첫 줄 윗부분(또는 그 반대)을 비교해 바로 이어지면 통과. 아니면 "사이에 빠진 줄이 있을 수 있어요" 경고 |
-| 사진 속 흰 부분이 여백에 닿음 | 여백이 넓어 보이거나 행이 끊긴다 | 여백 폭은 투표 최고점의 절반 이상인 구간만. 칸 높이의 8% 이하 끊김은 이어 붙임 |
-| 가로 여백이 뭉개져 두 줄이 붙음 | 띠 높이가 두 배 | 높이가 칸 k개 + 여백 k−1개와 맞으면 k줄로 나눔 |
-| 긴 스크롤 캡처 (수만 px) | iOS 사파리 캔버스 면적 한계 (~16.7M px) | 띠 하나를 400만 px 이하로 잘라 읽고, 남기는 건 1비트 마스크(원본의 1/32)뿐. 칸을 자를 때도 여러 줄을 한 띠로 묶어 다시 읽음. 그려지지 않으면(빈 픽셀) 그 띠만 `createImageBitmap`으로 잘라 다시 디코딩 |
-| 사파리 전체 페이지 PDF | 벡터+이미지 한 장짜리 긴 페이지 | pdf.js(legacy 빌드, 구형 사파리 폴리필 포함)로 폭 1170px에 맞춰 띠 구간만 렌더 |
-| 마지막 줄의 빈 자리 | 바탕색 칸이 조각으로 나온다 | 98% 이상 바탕색이면 "빈 칸"으로 빼고 조각 수에서 제외 |
-| 로딩 전 회색 칸 | 색 추출을 오염시킨다 | 거의 한 색이면 "불러오기 전 칸"으로 표시 (조각엔 남기되 표시) |
-| 다크 모드 | 바탕이 검정 | 바탕색을 가로 전체가 한 색인 행들의 최빈 색으로 추정하므로 그대로 동작 |
-| 웹 캡처 좌우 바깥 여백 | 첫 칸이 x=0에서 시작하지 않음 | 좌우 끝을 행들의 최빈값으로 따로 구함 |
+| Header buttons, highlights row | Gaps between buttons and between circles look like gutters | If the vertical gaps don't line up with the grid gutters, the row is "other." Even if they do, the band is discarded when its height doesn't fit the cell ratio (0.85–1.6) |
+| Header text lines | Gaps between letters are short background runs that blur the vote | Rows over 60% background are left out of the vote. Left/right edges use the mode, not the median (header rows vary; grid rows match exactly) |
+| Tab icon row, selection underline | Sits right on top of the grid | A row with under 25% content inside the cells is not a grid row. A full row still counts even if the underline caps its top, as long as the height fits |
+| Status bar and name bar on top, rows hidden by the bottom tab bar | The rows are cut off | Rows more than 3% shorter than the expected cell height, or touching a capture edge, are discarded as "cut-off rows" |
+| Duplicate rows between screenshots | The same post gets cut twice | Compare signatures row by row (all 3 cells) and join at the position with the longest overlap against the end of the previous result. Two shots of the same screen are dropped entirely |
+| Two captures with no overlapping full row | No way to know whether rows are missing in between | Compare the cut-off row at the bottom of the earlier capture with the top of the first row of the later one (or vice versa); pass if they continue directly. Otherwise warn "No rows overlap the previous screenshot, so some rows may be missing." |
+| White areas in a photo touching a gutter | The gutter looks wider, or rows break | Gutter width only counts runs at least half the top vote. Breaks of 8% of the cell height or less are bridged |
+| Smeared horizontal gutter merges two rows | Band is twice as tall | If the height matches k cells + k−1 gutters, split it into k rows |
+| Long scrolling capture (tens of thousands of px) | iOS Safari canvas area limit (~16.7M px) | Read in strips of at most 4M px each and keep only the 1-bit mask (1/32 of the original). Cutting cells also re-reads several rows bundled into one strip. If a strip draws blank (empty pixels), only that strip is cropped and re-decoded with `createImageBitmap` |
+| Safari full-page PDF | One long page of vectors plus images | pdf.js (legacy build, with polyfills for older Safari) renders only the strip ranges, fitted to a 1170px width |
+| Empty slots in the last row | Background-colored cells come out as pieces | Cells that are 98% or more background are marked `empty` and excluded from the piece count |
+| Gray cells before loading | They pollute color extraction | Nearly single-color cells are flagged "not loaded yet" (kept as pieces, but flagged) |
+| Dark mode | Background is black | Background color is estimated as the most common color among rows that are one color across, so it just works |
+| Outer left/right margins in web captures | The first cell doesn't start at x=0 | Left and right edges are found separately, as the mode across rows |
 
-## 검증
+## Verification
 
-실제 캡처가 아직 없어서 `src/synth/profile.ts`로 가짜 프로필을 그려 검증했다 (프로필 사진, 소개, 버튼, 하이라이트, 탭, 상단바·탭바, 4:5·3:4·1:1 칸, 가장자리가 흰 사진, 아이콘, 회색 칸).
+There are no real captures yet, so verification uses fake profiles drawn by `src/synth/profile.ts` (profile picture, bio, buttons, highlights, tabs, status bar and tab bar, 4:5, 3:4, and 1:1 cells, photos with white edges, icons, gray cells).
 
-- `npm test` — 단위 테스트 8개: 세 가지 칸 비율, 다크 모드 + 노이즈, 겹침 없는 캡처 경고, 같은 화면 두 번, 웹 좌우 여백, 2만 px 긴 캡처를 1500px 띠로 읽기. 잘라 낸 조각을 정답 칸과 대조해 순서·개수·중복 없음·경계 ±2px를 확인.
-- `npm run fixtures && npm run e2e` — 실제 PNG/PDF 파일을 브라우저(데스크톱·모바일 폭)에 올려 확인. 스크린샷 5장 → 30조각, 22,609px 긴 캡처 → 120조각, 전체 페이지 PDF → 36조각.
+- `npm test` — 8 unit tests: the three cell ratios, dark mode + noise, warning on captures with no overlap, the same screen twice, web left/right margins, and a 20,000px long capture read in 1500px strips. The cut pieces are checked against the ground-truth cells for order, count, no duplicates, and boundaries within ±2px.
+- `npm run fixtures && npm run e2e` — real PNG/PDF files uploaded in a browser (desktop and mobile widths). 5 screenshots → 30 pieces, a 22,609px long capture → 120 pieces, a full-page PDF → 36 pieces.
 
-## 아직 확인 못 한 것
+## Not yet verified
 
-- **실제 아이폰 사파리**에서 아주 긴 PNG 디코딩 자체가 메모리 한계에 걸리는지. 캔버스는 띠로 나눴지만 `<img>` 디코딩은 브라우저 몫이다.
-- **진짜 인스타 캡처.** 합성 이미지는 실제 화면과 여백 두께·안티앨리어싱·아이콘이 다를 수 있다.
-- 사파리가 만든 PDF의 실제 구조 (Chromium으로 만든 PDF로만 시험).
-- 고정 게시물 자동 감지 (지금은 수동 선택).
+- Whether decoding a very long PNG on **a real iPhone in Safari** hits the memory limit by itself. The canvas work is split into strips, but `<img>` decoding is up to the browser.
+- **Real Instagram captures.** Synthetic images may differ from the real screen in gutter thickness, antialiasing, and icons.
+- The actual structure of PDFs made by Safari (tested only with PDFs made by Chromium).
+- Automatic detection of pinned posts (currently chosen by hand).

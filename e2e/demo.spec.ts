@@ -23,7 +23,7 @@ async function drag(page: Page, a: number[], b: number[], steps = 24) {
 
 test.setTimeout(120_000);
 
-test('업로드 없이 첫 화면에 조각보가 펼쳐지고 간직하기는 잠겨 있다', async ({ page }) => {
+test('landing page lays out a jogakbo with no upload, and Keep is locked', async ({ page }) => {
   await page.goto('/');
   await page.waitForSelector('body[data-state="done"]');
   await expect(page.locator('#sew-status')).toContainText('left. Trace the red basting thread');
@@ -31,8 +31,8 @@ test('업로드 없이 첫 화면에 조각보가 펼쳐지고 간직하기는 �
   if (shotDir) await page.screenshot({ path: join(shotDir, `demo-${test.info().project.name}.png`), fullPage: true });
 });
 
-test('남은 솔기를 꿰매면 PNG로 간직하고, 창에 걸면 빛이 비친다', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', '마우스 드래그로 확인');
+test('sewing the remaining seams lets you keep a PNG, and hanging it in a window lets light through', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Verified with mouse drags');
   await page.setViewportSize({ width: 1280, height: 1600 });
   await page.goto('/');
   await page.waitForSelector('body[data-state="done"]');
@@ -66,8 +66,8 @@ test('남은 솔기를 꿰매면 PNG로 간직하고, 창에 걸면 빛이 비�
   if (shotDir) await file.saveAs(join(shotDir, 'demo-export.png'));
 });
 
-test('빛 모드에서 미리 떠 둔 천을 곱한 그림은 매번 새로 그린 그림과 같다', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', '그림 비교는 한 번이면 된다');
+test('in light mode, multiplying pre-rendered fabric layers matches a fresh redraw', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'One image comparison is enough');
   await page.goto('/');
   await page.waitForSelector('body[data-state="done"]');
   const diff = await page.evaluate(async () => {
@@ -84,7 +84,7 @@ test('빛 모드에서 미리 떠 둔 천을 곱한 그림은 매번 새로 그�
     };
     const px = (layers: boolean) => {
       const c = document.createElement('canvas');
-      // 층을 먼저 떠 두고, 빛만 옮겨 다시 그린다
+      // Render the layers first, then redraw with only the light moved
       if (layers) renderQuilt(c, q, 600, { ...view, light: [100, 100] }, { layers });
       renderQuilt(c, q, 600, view, { layers });
       return c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
@@ -94,7 +94,7 @@ test('빛 모드에서 미리 떠 둔 천을 곱한 그림은 매번 새로 그�
     for (let i = 0; i < a.length; i++) { const d = Math.abs(a[i] - b[i]); worst = Math.max(worst, d); sum += d; }
     return { worst, mean: sum / a.length };
   });
-  // 곱하기를 8비트로 두 번 나눠 하므로 반올림 차이만 남는다
+  // The multiply runs in two 8-bit passes, so only rounding differences remain
   expect(diff.mean).toBeLessThan(0.6);
   expect(diff.worst).toBeLessThan(6);
 });

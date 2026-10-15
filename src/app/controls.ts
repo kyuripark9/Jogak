@@ -3,9 +3,9 @@ import type { QuiltStage } from '../interaction/stage.ts';
 import { download, exportName, exportPng } from '../render/export.ts';
 
 /**
- * 조각보 아래 두 가지 손짓.
- * - 창에 걸기 / 벽에 걸기: 빛 모드 전환.
- * - 간직하기: 솔기를 다 꿰맨 뒤에만 열린다. 이어지지 않은 조각은 아직 한 장이 아니니까.
+ * Two gestures below the jogakbo.
+ * - Hang in the window / Hang on the wall: toggles light mode.
+ * - Keep: unlocks only once every seam is sewn, because unjoined pieces aren't one cloth yet.
  */
 export function bindControls(stage: QuiltStage, q: Quilt, lightBtn: HTMLButtonElement, saveBtn: HTMLButtonElement) {
   const sync = () => {

@@ -1,8 +1,8 @@
-/** sRGB ↔ CIELAB (D65). 색 거리를 사람 눈에 가깝게 재기 위해 Lab에서 계산한다. */
+/** sRGB ↔ CIELAB (D65). Computed in Lab so color distance tracks human perception. */
 export type Lab = [number, number, number];
 export type RGB = [number, number, number];
 
-/** 8비트 값은 256가지뿐이라 미리 풀어 둔다 */
+/** 8-bit values have only 256 cases, so precompute them */
 const LINEAR = Float64Array.from({ length: 256 }, (_, i) => {
   const c = i / 255;
   return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;

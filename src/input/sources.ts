@@ -1,8 +1,8 @@
 import type { Raster, StripReader } from '../grid/raster.ts';
 
 /**
- * 입력 파이프라인. 스크린샷, 긴 스크롤 캡처, 사파리 전체 페이지 PDF를 모두
- * 같은 StripReader로 바꿔서 그리드 감지에 넘긴다. 파일은 브라우저 밖으로 나가지 않는다.
+ * Input pipeline. Screenshots, long scroll captures, and Safari full-page PDFs all become
+ * the same StripReader for grid detection. Files never leave the browser.
  */
 
 export type SourceKind = 'screenshot' | 'long' | 'pdf';
@@ -15,8 +15,8 @@ export interface LoadedSource {
 }
 
 /**
- * 띠 하나의 최대 픽셀 수. iOS 사파리는 캔버스 하나당 약 16.7M 픽셀(4096²)을 넘으면
- * 빈 캔버스를 돌려주고, 페이지 전체 캔버스 메모리도 제한이 있어서 넉넉히 1/4로 잡는다.
+ * Max pixels per strip. iOS Safari returns a blank canvas above ~16.7M pixels (4096²) per canvas,
+ * and total canvas memory per page is capped too, so we stay at a safe quarter of that.
  */
 export const MAX_STRIP_PIXELS = 4_000_000;
 
@@ -31,7 +31,7 @@ function stripCanvas(width: number, height: number) {
   return { canvas, ctx };
 }
 
-/** 사파리는 한계를 넘으면 오류 없이 빈(투명) 픽셀을 준다. 몇 점만 찍어 확인한다 */
+/** Past its limits Safari silently returns blank (transparent) pixels; sample a few points to check */
 function looksBlank(d: Uint8ClampedArray) {
   const step = Math.max(4, Math.floor(d.length / 4 / 997) * 4);
   for (let i = 3; i < d.length; i += step) if (d[i] !== 0) return false;
@@ -68,7 +68,7 @@ export async function imageSource(file: File): Promise<LoadedSource> {
         ctx.drawImage(img, 0, y, W, h, 0, 0, W, h);
         let data = ctx.getImageData(0, 0, W, h);
         if (looksBlank(data.data)) {
-          // 큰 이미지를 <img>로 통째로 못 그리는 경우: 필요한 띠만 잘라 다시 디코딩
+          // When a large <img> can't be drawn whole: decode just the needed strip again
           const bmp = await createImageBitmap(file, 0, y, W, h);
           ctx.clearRect(0, 0, W, h);
           ctx.drawImage(bmp, 0, 0);
@@ -88,11 +88,11 @@ export async function imageSource(file: File): Promise<LoadedSource> {
   };
 }
 
-/** PDF 페이지를 이 폭으로 렌더한다 (아이폰 3배율 화면 폭과 비슷하게) */
+/** Render PDF pages at this width (close to an iPhone's 3x screen width) */
 const PDF_TARGET_WIDTH = 1170;
 
 export async function pdfSources(file: File): Promise<LoadedSource[]> {
-  // legacy 빌드: 최신 JS 기능(Map.getOrInsertComputed 등)을 폴리필해 두어 iOS 사파리에서도 돈다
+  // Legacy build: polyfills newer JS features (Map.getOrInsertComputed etc.) so it runs on iOS Safari
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const worker = await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url');
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
@@ -116,7 +116,7 @@ export async function pdfSources(file: File): Promise<LoadedSource[]> {
         stripHeight,
         async readStrip(y, h) {
           if (canvas.height !== h) canvas.height = h;
-          // 페이지 전체가 아니라 [y, y+h) 구간만 캔버스에 오도록 위로 민다
+          // Shift up so only [y, y+h) lands on the canvas, not the whole page
           await page.render({
             canvas,
             canvasContext: ctx,
@@ -137,8 +137,8 @@ export async function pdfSources(file: File): Promise<LoadedSource[]> {
 }
 
 /**
- * 파일들을 이름순(숫자는 숫자로)으로 정렬해서 읽는다. 아이폰 스크린샷 이름
- * (IMG_4101, IMG_4102 …)이 찍은 순서라서 스크롤 순서가 된다.
+ * Reads files sorted by name (numbers compared numerically). iPhone screenshot names
+ * (IMG_4101, IMG_4102 …) follow capture order, which is scroll order.
  */
 export async function loadFiles(files: File[]): Promise<{ sources: LoadedSource[]; errors: string[] }> {
   const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));

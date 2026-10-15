@@ -1,4 +1,4 @@
-/* 캡처를 올리는 자리와 1단계 확인 화면 */
+/* Capture drop zone and the stage 1 review view */
 .intake {
   border: 1px dashed var(--line);
   padding: 18px 16px;
@@ -15,7 +15,7 @@
   padding: 8px 2px;
   min-height: 44px;
   cursor: pointer;
-  /* 홈질 땀처럼 끊긴 밑줄 */
+  /* Broken underline like a running stitch */
   background-image: linear-gradient(90deg, var(--thread) 60%, transparent 60%);
   background-size: 10px 1.5px;
   background-repeat: repeat-x;

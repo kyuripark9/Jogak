@@ -4,10 +4,10 @@ import { renderQuilt, quiltScale, QUILT_MARGIN, type QuiltView } from '../render
 import { Sewing, applyTransform, centroid, invertTransform, pointInPoly, project, type Transform } from './sewing.ts';
 
 /**
- * 조각보 캔버스와 손의 만남.
- * - 꿰맬 수 있는 솔기(붉은 시침실) 위에서 누르고 솔기를 따라 그으면 땀이 생긴다.
- * - 솔기를 다 꿰매면 흐트러져 있던 두 덩어리가 제자리로 당겨져 붙는다.
- * - 마우스를 올리거나(데스크톱) 길게 누르면(모바일) 그 조각 너머로 원본 사진이 비친다.
+ * Where the hand meets the jogakbo canvas.
+ * - Press on a sewable seam (red basting thread) and trace along it to make stitches.
+ * - Once a seam is fully sewn, the two scattered clusters are pulled into place and joined.
+ * - Hover (desktop) or long-press (mobile) to see the original photo through that piece.
  */
 
 const SEW_TOLERANCE_CSS = 22;
@@ -61,8 +61,8 @@ export class QuiltStage {
   }
 
   /**
-   * 조각 i가 가야 할 자리. 덩어리 기준 회전을 조각 자기 중심 기준으로 바꿔 두면
-   * 덩어리가 합쳐져 회전 중심이 바뀌어도 조각이 튀지 않고 부드럽게 옮겨 간다.
+   * Where piece i should go. Re-expressing the cluster rotation about the piece's own center
+   * keeps pieces from jumping when merged clusters change the pivot, so they glide smoothly.
    */
   private target(i: number): Transform {
     const t = this.sewing.transformOf(i);
@@ -72,22 +72,22 @@ export class QuiltStage {
   }
 
   /**
-   * 빛 모드: 조각보를 창에 건다. 손(포인터)을 따라 빛이 드는 자리가 옮겨 가서,
-   * 천을 들고 빛에 이리저리 비춰 보는 것처럼 겹친 솔기와 실이 드러난다.
+   * Light mode: hangs the jogakbo in a window. The light follows the hand (pointer), revealing
+   * overlapping seams and threads, as if holding the cloth up and turning it against the light.
    */
   setMode(mode: 'wall' | 'light') {
     this.mode = mode;
     this.schedule();
   }
 
-  /** 화면 좌표 → 조각보 단위 */
+  /** Screen coordinates → quilt units */
   toQuilt(clientX: number, clientY: number): Pt {
     const r = this.canvas.getBoundingClientRect();
     const k = this.canvas.width / r.width / quiltScale(this.pixelWidth);
     return [(clientX - r.left) * k - QUILT_MARGIN, (clientY - r.top) * k - QUILT_MARGIN];
   }
 
-  /** 조각보 단위 → 화면 좌표 (테스트용) */
+  /** Quilt units → screen coordinates (for tests) */
   toClient([x, y]: Pt): Pt {
     const r = this.canvas.getBoundingClientRect();
     const k = r.width / this.canvas.width * quiltScale(this.pixelWidth);
@@ -152,7 +152,7 @@ export class QuiltStage {
       const seam = this.q.patchwork.seams[sw.seam];
       const pr = project(seam, p);
       if (pr.dist > this.tolerance() * 1.8) {
-        // 실이 솔기에서 벗어나면 땀이 끊긴다. 돌아오면 그 자리부터 다시
+        // Straying off the seam breaks the stitching; coming back resumes from there
         sw.lastS = NaN;
         return;
       }
@@ -209,9 +209,9 @@ export class QuiltStage {
   private frame = () => {
     this.raf = 0;
     let moving = false;
-    // 움직임 줄이기를 켠 사람에게는 미끄러지는 대신 한 번에 자리를 잡는다 (뜻은 같고 움직임만 뺀다)
+    // With reduced motion on, snap into place instead of gliding (same meaning, minus the motion)
     const ease = (k: number) => (REDUCED_MOTION.matches ? 1 : k);
-    // 덩어리가 제자리로 당겨진다
+    // Clusters are pulled into place
     this.q.patchwork.pieces.forEach((p, i) => {
       const t = this.target(p.index), c = this.current[i];
       const k = ease(0.16);

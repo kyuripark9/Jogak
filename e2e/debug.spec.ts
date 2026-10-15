@@ -7,7 +7,7 @@ const f = (n: string) => join(dir, n);
 const shotDir = process.env.SHOT_DIR;
 
 test.beforeAll(() => {
-  if (!existsSync(f('long-scroll.png'))) throw new Error('먼저 npm run fixtures 로 합성 캡처를 만드세요.');
+  if (!existsSync(f('long-scroll.png'))) throw new Error('Run npm run fixtures first to build the synthetic captures.');
 });
 
 async function upload(page: import('@playwright/test').Page, files: string[]) {
@@ -16,8 +16,8 @@ async function upload(page: import('@playwright/test').Page, files: string[]) {
   await page.waitForSelector('body[data-state="done"]', { timeout: 100_000 });
 }
 
-test('스크린샷 5장: 헤더를 건너뛰고 겹친 줄을 빼서 30조각', async ({ page }, info) => {
-  // 순서를 섞어 올려도 이름순으로 다시 놓는다
+test('5 screenshots: skips the header, drops overlapping rows, yields 30 pieces', async ({ page }, info) => {
+  // Shuffled uploads are put back in filename order
   await upload(page, ['IMG_4103.PNG', 'IMG_4100.PNG', 'IMG_4104.PNG', 'IMG_4101.PNG', 'IMG_4102.PNG'].map(f));
   await expect(page.locator('#summary')).toHaveAttribute('data-posts', '30');
   await expect(page.locator('#summary')).toHaveAttribute('data-aspect', '1.250');
@@ -25,7 +25,7 @@ test('스크린샷 5장: 헤더를 건너뛰고 겹친 줄을 빼서 30조각', 
   if (shotDir) await page.screenshot({ path: join(shotDir, `shots-${info.project.name}.png`), fullPage: true });
 });
 
-test('긴 스크롤 캡처 (2만 px 넘음): 띠로 나눠 읽고 120조각', async ({ page }, info) => {
+test('long scroll capture (over 20,000 px): read in strips, yields 120 pieces', async ({ page }, info) => {
   await upload(page, [f('long-scroll.png')]);
   await expect(page.locator('#summary')).toHaveAttribute('data-posts', '120');
   await expect(page.locator('#summary')).toHaveAttribute('data-aspect', /^1\.33/);
@@ -34,7 +34,7 @@ test('긴 스크롤 캡처 (2만 px 넘음): 띠로 나눠 읽고 120조각', as
   if (shotDir) await page.screenshot({ path: join(shotDir, `long-${info.project.name}.png`) });
 });
 
-test('사파리 전체 페이지 PDF: 이미지로 렌더해 36조각', async ({ page }, info) => {
+test('Safari full-page PDF: rendered to an image, yields 36 pieces', async ({ page }, info) => {
   await upload(page, [f('instagram-fullpage.pdf')]);
   await expect(page.locator('#summary')).toHaveAttribute('data-posts', '36');
   await expect(page.locator('.piece.placeholder')).toHaveCount(2);
