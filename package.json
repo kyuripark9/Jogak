@@ -12,7 +12,8 @@
     "test": "vitest run",
     "fixtures": "node --experimental-strip-types scripts/make-fixtures.ts",
     "demo-photos": "node --experimental-strip-types scripts/make-demo.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "perf": "playwright test --config perf/playwright.perf.ts"
   },
   "repository": {
     "type": "git",

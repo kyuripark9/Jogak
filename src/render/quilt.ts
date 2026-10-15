@@ -187,26 +187,18 @@ export function quiltScale(pixelWidth: number) {
   return pixelWidth / (QUILT_WIDTH + QUILT_MARGIN * 2);
 }
 
-export function renderQuilt(canvas: HTMLCanvasElement, q: Quilt, pixelWidth: number, view: QuiltView = finishedView(q)) {
-  // 둘레에 여백을 둬서 조각보 너머의 빛과 가장자리 단(시접이 겹친 테두리)이 보이게
-  const M = QUILT_MARGIN;
-  const s = quiltScale(pixelWidth);
-  const cw = Math.round((QUILT_WIDTH + M * 2) * s), ch = Math.round((QUILT_HEIGHT + M * 2) * s);
-  if (canvas.width !== cw || canvas.height !== ch) {
-    canvas.width = cw;
-    canvas.height = ch;
-  }
-  const ctx = canvas.getContext('2d')!;
-  const light = view.mode === 'light';
-  const L: Pt = view.light ?? [QUILT_WIDTH * 0.3, QUILT_HEIGHT * 0.2];
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  if (light) windowLight(ctx, cw, ch, (L[0] + M) * s, (L[1] + M) * s);
-  else ctx.drawImage(cachedBackdrop(cw, ch), 0, 0);
-  ctx.translate(M * s, M * s);
-  const base = ctx.getTransform();
+interface Frame {
+  q: Quilt;
+  view: QuiltView;
+  s: number;
+  light: boolean;
+  L: Pt;
+}
+
+/** 조각들. ctx는 조각보 원점(여백 안쪽)에 맞춰져 있어야 한다 */
+function drawPieces(ctx: CanvasRenderingContext2D, { q, view, s, light }: Frame) {
   // 빛 모드: 천이 빛을 곱해서 거른다. 두 겹이 되는 시접은 저절로 더 짙어진다
   const blend: GlobalCompositeOperation = light ? 'multiply' : 'source-over';
-
   for (const p of q.patchwork.pieces) {
     const pattern = ctx.createPattern(tileCanvas(q, p.index), 'repeat')!;
     // 실 굵기가 화면 크기와 상관없이 같은 천처럼 보이도록, 결 방향은 조각마다 다르게
@@ -220,13 +212,15 @@ export function renderQuilt(canvas: HTMLCanvasElement, q: Quilt, pixelWidth: num
     const weave = WEAVES[q.memories[p.index].fabric.fabric];
     const reveal = view.reveal?.index === p.index ? view.reveal.alpha : 0;
     if (reveal > 0) {
-      // 원본이 천 너머로 비친다: 사진을 먼저 깔고 천을 얇게 덮는다
+      // 원본이 천 너머로 비친다: 사진을 먼저 깔고 천을 얇게 덮는다.
+      // 창에 걸었을 땐 사진도 슬라이드 필름처럼 빛을 거른다 (곱하기)
       ctx.save();
       ctx.clip();
       const xs = p.poly.map((v) => v[0] * s), ys = p.poly.map((v) => v[1] * s);
       const x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
       const img = thumbCanvas(q, p.index);
       const k = Math.max(w / img.width, h / img.height);
+      ctx.globalCompositeOperation = blend;
       ctx.globalAlpha = reveal * 0.8;
       ctx.drawImage(img, x0 + (w - img.width * k) / 2, y0 + (h - img.height * k) / 2, img.width * k, img.height * k);
       ctx.restore();
@@ -256,12 +250,15 @@ export function renderQuilt(canvas: HTMLCanvasElement, q: Quilt, pixelWidth: num
     }
     ctx.restore();
   }
+}
 
+/** 시침실과 땀 */
+function drawThreads(ctx: CanvasRenderingContext2D, { q, view, s, light }: Frame) {
+  const base = ctx.getTransform();
   q.patchwork.seams.forEach((seam, i) => {
     const st = view.sewing.seams[i];
-    const sewable = view.sewing.isSewable(i);
     ctx.setTransform(base);
-    if (sewable) drawBasting(ctx, seam.a, seam.b, s, view.sewing.coverage(i));
+    if (view.sewing.isSewable(i)) drawBasting(ctx, seam.a, seam.b, s, view.sewing.coverage(i));
     if (st.stitches.length) {
       // 꿰맨 솔기는 그 덩어리와 함께 움직이고, 꿰매는 중인 솔기는 제자리
       if (st.sewn) withTransform(ctx, view.transforms[seam.from] ?? IDENTITY, s);
@@ -269,8 +266,11 @@ export function renderQuilt(canvas: HTMLCanvasElement, q: Quilt, pixelWidth: num
     }
   });
   ctx.setTransform(base);
+}
 
-  // 뒤에서 비치는 빛: 빛 가까운 조각일수록 빛을 머금어 환해진다
+/** 뒤에서 비치는 빛: 빛 가까운 조각일수록 빛을 머금어 환해진다 */
+function drawGlow(ctx: CanvasRenderingContext2D, { s, light, L }: Frame) {
+  const M = QUILT_MARGIN;
   ctx.globalCompositeOperation = 'screen';
   const W = QUILT_WIDTH * s, H = QUILT_HEIGHT * s;
   const gx = light ? L[0] * s : W * 0.25, gy = light ? L[1] * s : H * 0.15;
@@ -280,4 +280,96 @@ export function renderQuilt(canvas: HTMLCanvasElement, q: Quilt, pixelWidth: num
   ctx.fillStyle = glow;
   ctx.fillRect(-M * s, -M * s, W + 2 * M * s, H + 2 * M * s);
   ctx.globalCompositeOperation = 'source-over';
+}
+
+/** 빛 모드 층 캐시: 빛만 움직일 땐 천과 실을 다시 짜지 않는다 */
+interface Layers {
+  key: string;
+  /** 천이 빛을 얼마나 통과시키는지 (흰 바탕에 곱한 천) */
+  cloth: HTMLCanvasElement;
+  /** 실 (투명 바탕) */
+  thread: HTMLCanvasElement;
+}
+const layerCache = new WeakMap<HTMLCanvasElement, Layers>();
+
+function layerKey(view: QuiltView, cw: number) {
+  let stitches = 0;
+  for (const st of view.sewing.seams) stitches += st.stitches.length * 2 + (st.sewn ? 1 : 0);
+  const r = view.reveal ? `${view.reveal.index}:${view.reveal.alpha.toFixed(3)}` : '-';
+  const t = view.transforms.map((x) => `${x.dx.toFixed(2)},${x.dy.toFixed(2)},${x.rot.toFixed(4)}`).join(';');
+  return `${cw}|${stitches}|${r}|${t}`;
+}
+
+function layer(c: HTMLCanvasElement | undefined, w: number, h: number) {
+  c ??= document.createElement('canvas');
+  if (c.width !== w || c.height !== h) {
+    c.width = w;
+    c.height = h;
+  }
+  const ctx = c.getContext('2d')!;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  return { c, ctx };
+}
+
+export interface RenderOptions {
+  /**
+   * 빛 모드에서 천과 실을 따로 떠 둔다. 빛은 천을 곱으로 지나가므로 (빛 × 천)
+   * 빛만 움직일 때는 미리 떠 둔 천 한 장을 곱하면 똑같은 그림이 된다.
+   * 화면에서만 쓴다. 내보내기처럼 큰 캔버스에선 메모리를 두 배로 먹으므로 끈다.
+   */
+  layers?: boolean;
+}
+
+export function renderQuilt(
+  canvas: HTMLCanvasElement,
+  q: Quilt,
+  pixelWidth: number,
+  view: QuiltView = finishedView(q),
+  opts: RenderOptions = {},
+) {
+  // 둘레에 여백을 둬서 조각보 너머의 빛과 가장자리 단(시접이 겹친 테두리)이 보이게
+  const M = QUILT_MARGIN;
+  const s = quiltScale(pixelWidth);
+  const cw = Math.round((QUILT_WIDTH + M * 2) * s), ch = Math.round((QUILT_HEIGHT + M * 2) * s);
+  if (canvas.width !== cw || canvas.height !== ch) {
+    canvas.width = cw;
+    canvas.height = ch;
+  }
+  const ctx = canvas.getContext('2d')!;
+  const light = view.mode === 'light';
+  const f: Frame = { q, view, s, light, L: view.light ?? [QUILT_WIDTH * 0.3, QUILT_HEIGHT * 0.2] };
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  if (light && opts.layers) {
+    const key = layerKey(view, cw);
+    let lay = layerCache.get(canvas);
+    if (!lay || lay.key !== key) {
+      const cloth = layer(lay?.cloth, cw, ch);
+      cloth.ctx.fillStyle = '#fff';
+      cloth.ctx.fillRect(0, 0, cw, ch);
+      cloth.ctx.translate(M * s, M * s);
+      drawPieces(cloth.ctx, f);
+      const thread = layer(lay?.thread, cw, ch);
+      thread.ctx.clearRect(0, 0, cw, ch);
+      thread.ctx.translate(M * s, M * s);
+      drawThreads(thread.ctx, f);
+      lay = { key, cloth: cloth.c, thread: thread.c };
+      layerCache.set(canvas, lay);
+    }
+    windowLight(ctx, cw, ch, (f.L[0] + M) * s, (f.L[1] + M) * s);
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.drawImage(lay.cloth, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.drawImage(lay.thread, 0, 0);
+    ctx.translate(M * s, M * s);
+    drawGlow(ctx, f);
+    return;
+  }
+
+  if (light) windowLight(ctx, cw, ch, (f.L[0] + M) * s, (f.L[1] + M) * s);
+  else ctx.drawImage(cachedBackdrop(cw, ch), 0, 0);
+  ctx.translate(M * s, M * s);
+  drawPieces(ctx, f);
+  drawThreads(ctx, f);
+  drawGlow(ctx, f);
 }

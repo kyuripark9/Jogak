@@ -57,7 +57,7 @@ function sew() {
   const q = buildQuilt(thumbs, seed);
   const canvas = $<HTMLCanvasElement>('#canvas');
   $('#quilt').hidden = false;
-  const cssW = Math.min(720, canvas.parentElement!.clientWidth || 720);
+  const cssW = Math.min(720, canvas.clientWidth || 720);
   stage?.destroy();
   stage = new QuiltStage(
     canvas,

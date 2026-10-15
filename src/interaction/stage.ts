@@ -12,6 +12,7 @@ import { Sewing, applyTransform, centroid, invertTransform, pointInPoly, project
 
 const SEW_TOLERANCE_CSS = 22;
 const LONG_PRESS_MS = 420;
+const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 
 export interface StageEvents {
   onSewn?: (seam: number, sewing: Sewing) => void;
@@ -108,11 +109,14 @@ export class QuiltStage {
 
   private setReveal(index: number | null) {
     if (index == null) {
-      if (this.reveal) this.reveal.target = 0;
+      if (!this.reveal || this.reveal.target === 0) return;
+      this.reveal.target = 0;
     } else if (!this.reveal || this.reveal.index !== index) {
       this.reveal = { index, alpha: 0, target: 1 };
-    } else {
+    } else if (this.reveal.target !== 1) {
       this.reveal.target = 1;
+    } else {
+      return;
     }
     this.schedule();
   }
@@ -205,10 +209,12 @@ export class QuiltStage {
   private frame = () => {
     this.raf = 0;
     let moving = false;
+    // 움직임 줄이기를 켠 사람에게는 미끄러지는 대신 한 번에 자리를 잡는다 (뜻은 같고 움직임만 뺀다)
+    const ease = (k: number) => (REDUCED_MOTION.matches ? 1 : k);
     // 덩어리가 제자리로 당겨진다
     this.q.patchwork.pieces.forEach((p, i) => {
       const t = this.target(p.index), c = this.current[i];
-      const k = 0.16;
+      const k = ease(0.16);
       const next = {
         dx: c.dx + (t.dx - c.dx) * k,
         dy: c.dy + (t.dy - c.dy) * k,
@@ -221,11 +227,11 @@ export class QuiltStage {
     });
     const dl = Math.hypot(this.lightTarget[0] - this.light[0], this.lightTarget[1] - this.light[1]);
     if (this.mode === 'light' && dl > 0.5) {
-      this.light = [this.light[0] + (this.lightTarget[0] - this.light[0]) * 0.12, this.light[1] + (this.lightTarget[1] - this.light[1]) * 0.12];
+      this.light = [this.light[0] + (this.lightTarget[0] - this.light[0]) * ease(0.12), this.light[1] + (this.lightTarget[1] - this.light[1]) * ease(0.12)];
       moving = true;
     }
     if (this.reveal) {
-      this.reveal.alpha += (this.reveal.target - this.reveal.alpha) * 0.2;
+      this.reveal.alpha += (this.reveal.target - this.reveal.alpha) * ease(0.2);
       if (Math.abs(this.reveal.target - this.reveal.alpha) > 0.01) moving = true;
       else if (this.reveal.target === 0) this.reveal = null;
     }
@@ -241,6 +247,6 @@ export class QuiltStage {
       mode: this.mode,
       light: this.light,
     };
-    renderQuilt(this.canvas, this.q, this.pixelWidth, view);
+    renderQuilt(this.canvas, this.q, this.pixelWidth, view, { layers: true });
   }
 }

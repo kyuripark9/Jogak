@@ -1,4 +1,4 @@
-import { downscale, type Raster } from '../grid/raster.ts';
+import type { Raster } from '../grid/raster.ts';
 import { buildQuilt } from '../quilt/build.ts';
 import { QuiltStage } from '../interaction/stage.ts';
 import { Sewing, seamLength } from '../interaction/sewing.ts';
@@ -14,18 +14,22 @@ const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as
 const status = $('#sew-status');
 /** 이 깊이보다 얕은(큰) 솔기는 방문자 몫으로 남긴다 */
 const LEAVE_DEPTH = 2;
+const THUMB = 240;
 
+/** 사진 한 장 → 색을 뽑을 작은 그림. 줄이는 일은 브라우저에 맡긴다 (240px이면 색과 결이 충분하다) */
 async function loadRaster(src: string): Promise<Raster> {
   const img = new Image();
   img.src = src;
   await img.decode();
+  const w = Math.min(THUMB, img.naturalWidth), h = Math.max(1, Math.round((img.naturalHeight * w) / img.naturalWidth));
   const c = document.createElement('canvas');
-  c.width = img.naturalWidth;
-  c.height = img.naturalHeight;
+  c.width = w;
+  c.height = h;
   const ctx = c.getContext('2d', { willReadFrequently: true })!;
-  ctx.drawImage(img, 0, 0);
-  const d = ctx.getImageData(0, 0, c.width, c.height);
-  return downscale({ width: d.width, height: d.height, data: d.data }, 240);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, w, h);
+  const d = ctx.getImageData(0, 0, w, h);
+  return { width: w, height: h, data: d.data };
 }
 
 function say(sw: Sewing) {
@@ -50,7 +54,7 @@ async function main() {
   }
 
   const canvas = $<HTMLCanvasElement>('#canvas');
-  const cssW = Math.min(720, canvas.parentElement!.clientWidth || 720);
+  const cssW = Math.min(720, canvas.clientWidth || 720);
   let sync = () => {};
   const stage = new QuiltStage(
     canvas,
@@ -62,7 +66,8 @@ async function main() {
   sync = bindControls(stage, q, $<HTMLButtonElement>('#light'), $<HTMLButtonElement>('#save'));
   say(sewing);
   document.body.dataset.state = 'done';
-  (window as unknown as { __stage: QuiltStage }).__stage = stage;
+  (window as unknown as { __stage: QuiltStage; __quilt: typeof q }).__stage = stage;
+  (window as unknown as { __quilt: typeof q }).__quilt = q;
 }
 
 main().catch((e) => {

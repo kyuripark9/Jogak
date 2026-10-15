@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>조각 · 기억을 꿰매는 조각보</title>
     <meta name="description" content="사진을 천 조각으로 물들여 손으로 꿰매는 조각보 앨범" />
-    <link rel="stylesheet" href="/src/debug/style.css" />
+    <meta name="theme-color" content="#f3eee3" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/src/app/base.css" />
     <link rel="stylesheet" href="/src/quilt/style.css" />
     <link rel="stylesheet" href="/src/demo/style.css" />
   </head>
@@ -20,14 +22,20 @@
       </header>
       <figure class="quilt" id="quilt">
         <canvas id="canvas" aria-label="사진으로 물들인 천 조각들을 이은 조각보"></canvas>
-        <figcaption id="sew-status" aria-live="polite">조각보를 펼치는 중</figcaption>
-        <p class="hint">조각 위에 마우스를 올리거나 길게 누르면 천 너머로 원래 사진이 비쳐요.</p>
-        <div class="hands"><button type="button" id="light"></button><button type="button" id="save" disabled></button></div>
       </figure>
-      <nav class="next">
-        <a class="thread-link" href="./quilt.html">내 인스타그램 캡처로 짓기</a>
-        <a class="thread-link quiet" href="./debug.html">캡처 자르기 확인 화면</a>
-      </nav>
+      <section class="side" aria-label="꿰매기">
+        <p id="sew-status" aria-live="polite">조각보를 펼치는 중</p>
+        <p class="hint"><span class="by-mouse">조각 위에 마우스를 올리면</span><span class="by-touch">조각을 길게 누르면</span> 천 너머로 원래 사진이 비쳐요.</p>
+        <div class="hands">
+          <button type="button" class="thread-button" id="light"></button>
+          <button type="button" class="thread-button" id="save" disabled></button>
+        </div>
+        <nav class="next" aria-label="다른 화면">
+          <a class="thread-link" href="./quilt.html">내 인스타그램 캡처로 짓기</a>
+          <a class="thread-link quiet" href="./debug.html">캡처 자르기 확인 화면</a>
+        </nav>
+        <p class="private">사진은 이 브라우저 밖으로 나가지 않아요.</p>
+      </section>
     </main>
     <script type="module" src="/src/demo/main.ts"></script>
   </body>

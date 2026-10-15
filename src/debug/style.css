@@ -1,42 +1,4 @@
-/*
- * 1단계 디버그 화면. 결과물 화면이 아니라 확인용이지만, 한지 바탕에 먹색 글씨,
- * 감지 결과는 바느질 실 색(홍색 실, 쪽빛 실)으로 그려 이후 단계와 같은 결을 유지한다.
- */
-:root {
-  --paper: #f3eee3;
-  --paper-deep: #e8e0cf;
-  --ink: #2b2723;
-  --ink-soft: #6f675c;
-  --thread: #a8432f; /* 홍색 실: 온전한 줄 */
-  --indigo: #3b4a6b; /* 쪽빛 실: 여백선 */
-  --gardenia: #c9a227; /* 치자색: 중복 */
-  --line: rgba(43, 39, 35, 0.18);
-  color-scheme: light;
-}
-
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  background-color: var(--paper);
-  /* 한지 섬유처럼 보이는 아주 옅은 결 */
-  background-image:
-    repeating-linear-gradient(83deg, rgba(120, 100, 70, 0.025) 0 1px, transparent 1px 7px),
-    repeating-linear-gradient(-11deg, rgba(120, 100, 70, 0.03) 0 1px, transparent 1px 11px);
-  color: var(--ink);
-  font-family: "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", serif;
-  line-height: 1.6;
-  -webkit-text-size-adjust: 100%;
-}
-
-.page { max-width: 1080px; margin: 0 auto; padding: 28px 16px 80px; }
-
-h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 8px; }
-h1 span { display: block; font-size: 0.8rem; font-weight: 400; color: var(--ink-soft); letter-spacing: 0.08em; }
-h2 { font-size: 1.05rem; font-weight: 600; margin: 0 0 10px; }
-.lede { color: var(--ink-soft); max-width: 36em; margin: 0 0 24px; }
-.hint { color: var(--ink-soft); font-size: 0.85rem; margin: 6px 0; }
-
+/* 캡처를 올리는 자리와 1단계 확인 화면 */
 .intake {
   border: 1px dashed var(--line);
   padding: 18px 16px;
@@ -44,13 +6,14 @@ h2 { font-size: 1.05rem; font-weight: 600; margin: 0 0 10px; }
 }
 .intake.over { border-color: var(--thread); }
 .pick input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.pick span, .samples button, .thread-link {
+.pick span, .samples button {
   display: inline-block;
   font: inherit;
   color: var(--ink);
   background: transparent;
   border: 0;
   padding: 8px 2px;
+  min-height: 44px;
   cursor: pointer;
   /* 홈질 땀처럼 끊긴 밑줄 */
   background-image: linear-gradient(90deg, var(--thread) 60%, transparent 60%);
@@ -104,7 +67,3 @@ body[data-state="busy"] .progress::after { content: " …"; }
 .piece.pinned canvas { opacity: 0.55; }
 .piece.placeholder canvas { outline: 1.5px dashed var(--thread); }
 
-@media (min-width: 720px) {
-  .page { padding: 48px 32px 96px; }
-  h1 { font-size: 1.9rem; }
-}

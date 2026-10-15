@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>조각 · 조각보 짓기</title>
+    <meta name="theme-color" content="#f3eee3" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/src/app/base.css" />
     <link rel="stylesheet" href="/src/debug/style.css" />
     <link rel="stylesheet" href="/src/quilt/style.css" />
   </head>
@@ -29,8 +32,8 @@
       <figure class="quilt" id="quilt" hidden>
         <canvas id="canvas"></canvas>
         <figcaption id="sew-status" aria-live="polite"></figcaption>
-        <div class="hands"><button type="button" id="light"></button><button type="button" id="save" disabled></button></div>
-        <p class="hint">조각 위에 마우스를 올리거나 길게 누르면 천 너머로 원래 사진이 비쳐요.</p>
+        <div class="hands"><button type="button" class="thread-button" id="light"></button><button type="button" class="thread-button" id="save" disabled></button></div>
+        <p class="hint"><span class="by-mouse">조각 위에 마우스를 올리면</span><span class="by-touch">조각을 길게 누르면</span> 천 너머로 원래 사진이 비쳐요.</p>
       </figure>
       <section id="ledger" hidden></section>
     </main>

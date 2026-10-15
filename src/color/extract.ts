@@ -61,46 +61,64 @@ function samples(t: Raster, maxSamples: number, skipIconCorner: boolean): Lab[] 
   return out;
 }
 
-/** k-means++ (Lab 공간). seed가 같으면 결과도 같다 */
+/**
+ * k-means++ (Lab 공간). seed가 같으면 결과도 같다.
+ * 거리는 제곱한 채로 비교한다 (순서만 필요하니 제곱근을 뺀다). 피드 한 장에 사진이 백 장 넘게 오므로
+ * 사진마다 수십만 번 도는 이 부분이 조각보를 펼치는 시간의 대부분이다.
+ */
 export function kmeans(points: Lab[], k: number, seed = 1, iterations = 14): Swatch[] {
-  if (points.length === 0) return [];
+  const n = points.length;
+  if (n === 0) return [];
+  const P = new Float64Array(n * 3);
+  points.forEach((p, i) => { P[i * 3] = p[0]; P[i * 3 + 1] = p[1]; P[i * 3 + 2] = p[2]; });
   const rand = rng(seed);
-  const centers: Lab[] = [points[Math.floor(rand() * points.length)]];
-  const d2 = new Float64Array(points.length);
-  while (centers.length < Math.min(k, points.length)) {
+  const C: number[] = [];
+  const pick = (i: number) => C.push(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
+  pick(Math.floor(rand() * n));
+  const d2 = new Float64Array(n).fill(Infinity);
+  while (C.length / 3 < Math.min(k, n)) {
+    // 새로 더한 중심만 보고 가장 가까운 거리를 줄여 간다
+    const j = C.length - 3, c0 = C[j], c1 = C[j + 1], c2 = C[j + 2];
     let sum = 0;
-    points.forEach((p, i) => {
-      let m = Infinity;
-      for (const c of centers) m = Math.min(m, deltaE(p, c) ** 2);
-      d2[i] = m;
-      sum += m;
-    });
+    for (let i = 0; i < n; i++) {
+      const a = P[i * 3] - c0, b = P[i * 3 + 1] - c1, c = P[i * 3 + 2] - c2;
+      const d = a * a + b * b + c * c;
+      if (d < d2[i]) d2[i] = d;
+      sum += d2[i];
+    }
     if (sum === 0) break;
     let r = rand() * sum, i = 0;
-    while ((r -= d2[i]) > 0 && i < points.length - 1) i++;
-    centers.push(points[i]);
+    while ((r -= d2[i]) > 0 && i < n - 1) i++;
+    pick(i);
   }
-  const assign = new Int32Array(points.length);
+  const m = C.length / 3;
+  const assign = new Int32Array(n);
+  const acc = new Float64Array(m * 4);
   for (let it = 0; it < iterations; it++) {
-    points.forEach((p, i) => {
+    acc.fill(0);
+    for (let i = 0; i < n; i++) {
+      const x = P[i * 3], y = P[i * 3 + 1], z = P[i * 3 + 2];
       let best = 0, bd = Infinity;
-      centers.forEach((c, j) => {
-        const d = deltaE(p, c);
+      for (let j = 0; j < m; j++) {
+        const a = x - C[j * 3], b = y - C[j * 3 + 1], c = z - C[j * 3 + 2];
+        const d = a * a + b * b + c * c;
         if (d < bd) { bd = d; best = j; }
-      });
+      }
       assign[i] = best;
-    });
-    const acc = centers.map(() => [0, 0, 0, 0]);
-    points.forEach((p, i) => {
-      const a = acc[assign[i]];
-      a[0] += p[0]; a[1] += p[1]; a[2] += p[2]; a[3]++;
-    });
-    acc.forEach((a, j) => { if (a[3]) centers[j] = [a[0] / a[3], a[1] / a[3], a[2] / a[3]]; });
+      acc[best * 4] += x; acc[best * 4 + 1] += y; acc[best * 4 + 2] += z; acc[best * 4 + 3]++;
+    }
+    for (let j = 0; j < m; j++) {
+      const c = acc[j * 4 + 3];
+      if (c) { C[j * 3] = acc[j * 4] / c; C[j * 3 + 1] = acc[j * 4 + 1] / c; C[j * 3 + 2] = acc[j * 4 + 2] / c; }
+    }
   }
-  const counts = new Array(centers.length).fill(0);
+  const counts = new Array(m).fill(0);
   for (const a of assign) counts[a]++;
-  return centers
-    .map((lab, j) => ({ lab, rgb: labToRgb(lab), weight: counts[j] / points.length }))
+  return counts
+    .map((count, j): Swatch => {
+      const lab: Lab = [C[j * 3], C[j * 3 + 1], C[j * 3 + 2]];
+      return { lab, rgb: labToRgb(lab), weight: count / n };
+    })
     .filter((s) => s.weight > 0)
     .sort((p, q) => q.weight - p.weight);
 }

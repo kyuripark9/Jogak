@@ -20,13 +20,7 @@
 .ledger strong { color: var(--ink); font-weight: 600; }
 #sew-status { font-size: 0.88rem; color: var(--ink); max-width: 720px; margin: 12px auto 0; }
 .quilt .hint { max-width: 720px; margin: 4px auto 0; }
-.hands { display: flex; flex-wrap: wrap; gap: 4px 22px; max-width: 720px; margin: 10px auto 0; }
-.hands button {
-  font: inherit; font-size: 0.92rem; color: var(--ink); background: transparent; border: 0; padding: 8px 2px; cursor: pointer;
-  background-image: linear-gradient(90deg, var(--thread) 60%, transparent 60%);
-  background-size: 10px 1.5px; background-repeat: repeat-x; background-position: 0 100%;
-}
-.hands button:disabled { color: var(--ink-soft); cursor: default; background-image: linear-gradient(90deg, var(--line) 60%, transparent 60%); }
-.hands button:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
+.hands { display: flex; flex-wrap: wrap; gap: 0 22px; max-width: 720px; margin: 10px auto 0; }
+.hands button { font-size: 0.92rem; }
 /* 빛 모드: 방도 조금 어두워져 창의 빛이 도드라진다 */
 body[data-mode="light"] { background-color: #e6e0d6; transition: background-color 0.6s; }

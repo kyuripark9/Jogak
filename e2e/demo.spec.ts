@@ -65,3 +65,36 @@ test('남은 솔기를 꿰매면 PNG로 간직하고, 창에 걸면 빛이 비�
   expect(size).toBeGreaterThan(200_000);
   if (shotDir) await file.saveAs(join(shotDir, 'demo-export.png'));
 });
+
+test('빛 모드에서 미리 떠 둔 천을 곱한 그림은 매번 새로 그린 그림과 같다', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', '그림 비교는 한 번이면 된다');
+  await page.goto('/');
+  await page.waitForSelector('body[data-state="done"]');
+  const diff = await page.evaluate(async () => {
+    const path = '/src/render/quilt.ts';
+    const { renderQuilt } = await import(path);
+    const st = (window as any).__stage, q = (window as any).__quilt;
+    const pieces = q.patchwork.pieces;
+    const view = {
+      sewing: st.sewing,
+      transforms: pieces.map(() => ({ dx: 0, dy: 0, rot: 0, cx: 0, cy: 0 })),
+      reveal: { index: 3, alpha: 1 },
+      mode: 'light' as const,
+      light: [420, 380] as [number, number],
+    };
+    const px = (layers: boolean) => {
+      const c = document.createElement('canvas');
+      // 층을 먼저 떠 두고, 빛만 옮겨 다시 그린다
+      if (layers) renderQuilt(c, q, 600, { ...view, light: [100, 100] }, { layers });
+      renderQuilt(c, q, 600, view, { layers });
+      return c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+    };
+    const a = px(false), b = px(true);
+    let worst = 0, sum = 0;
+    for (let i = 0; i < a.length; i++) { const d = Math.abs(a[i] - b[i]); worst = Math.max(worst, d); sum += d; }
+    return { worst, mean: sum / a.length };
+  });
+  // 곱하기를 8비트로 두 번 나눠 하므로 반올림 차이만 남는다
+  expect(diff.mean).toBeLessThan(0.6);
+  expect(diff.worst).toBeLessThan(6);
+});

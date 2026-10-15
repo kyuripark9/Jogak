@@ -1,0 +1,75 @@
+/*
+ * 모든 화면이 함께 쓰는 바탕. 한지 바탕에 먹색 글씨, 누를 수 있는 것은 홈질 땀 같은 끊긴 밑줄.
+ * 색 이름은 실과 물감에서 왔다 (홍색 실, 쪽빛 실, 치자색).
+ */
+:root {
+  --paper: #f3eee3;
+  --paper-deep: #e8e0cf;
+  --ink: #2b2723;
+  --ink-soft: #6f675c;
+  --thread: #a8432f; /* 홍색 실: 온전한 줄 */
+  --indigo: #3b4a6b; /* 쪽빛 실: 여백선 */
+  --gardenia: #c9a227; /* 치자색: 중복 */
+  --line: rgba(43, 39, 35, 0.18);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background-color: var(--paper);
+  /* 한지 섬유처럼 보이는 아주 옅은 결 */
+  background-image:
+    repeating-linear-gradient(83deg, rgba(120, 100, 70, 0.025) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(-11deg, rgba(120, 100, 70, 0.03) 0 1px, transparent 1px 11px);
+  color: var(--ink);
+  font-family: "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", serif;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: max(28px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 80px max(16px, env(safe-area-inset-left));
+}
+
+h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 8px; }
+h1 span { display: block; font-size: 0.8rem; font-weight: 400; color: var(--ink-soft); letter-spacing: 0.08em; }
+h2 { font-size: 1.05rem; font-weight: 600; margin: 0 0 10px; }
+.lede { color: var(--ink-soft); max-width: 36em; margin: 0 0 24px; }
+.hint { color: var(--ink-soft); font-size: 0.85rem; margin: 6px 0; }
+
+.thread-link, .thread-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* 손가락으로 누르기 넉넉한 높이 */
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  padding: 8px 2px;
+  cursor: pointer;
+  /* 홈질 땀처럼 끊긴 밑줄 */
+  background-image: linear-gradient(90deg, var(--thread) 60%, transparent 60%);
+  background-size: 10px 1.5px;
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+.thread-link:focus-visible, .thread-button:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
+.thread-button:disabled { color: var(--ink-soft); cursor: default; background-image: linear-gradient(90deg, var(--line) 60%, transparent 60%); }
+.quiet { color: var(--ink-soft); background-image: linear-gradient(90deg, var(--ink-soft) 60%, transparent 60%); }
+
+/* 가진 손에 맞는 안내만: 마우스가 있으면 올리기, 손가락뿐이면 길게 누르기 */
+@media (hover: none) { .by-mouse { display: none; } }
+@media (hover: hover) { .by-touch { display: none; } }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+@media (min-width: 720px) {
+  .page { padding: 48px 32px 96px; }
+  h1 { font-size: 1.9rem; }
+}

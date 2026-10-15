@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 조각 네 개와 꿰매는 중인 솔기 하나 -->
+  <rect width="32" height="32" rx="3" fill="#f3eee3"/>
+  <path d="M3 3h14l-2 12H3z" fill="#dfe7d6"/>
+  <path d="M17 3h12v15H15z" fill="#efd9cf"/>
+  <path d="M3 15h12l2 14H3z" fill="#d7dcea"/>
+  <path d="M15 18h14v11H17z" fill="#ecdfc6"/>
+  <path d="M17 3l-2 15 2 11" fill="none" stroke="#a8432f" stroke-width="1.6" stroke-dasharray="3 2.4" stroke-linecap="round"/>
+</svg>
