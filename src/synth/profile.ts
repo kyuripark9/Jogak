@@ -17,7 +17,24 @@ export interface ProfileOptions {
   gutterPt?: number;
   /** 로딩 전 회색 칸으로 그릴 게시물 번호 */
   placeholders?: number[];
+  /**
+   * 'test': 무작위 색 덩어리 (자르기 검증용, 함정 포함)
+   * 'natural': 바다·숲·카페·밤거리 같은 장면 색. 같은 날 찍은 듯 같은 장면이 1~4장씩 이어진다
+   */
+  style?: 'test' | 'natural';
 }
+
+type Scene = { name: string; sky: C; ground: C; accents: C[]; dots?: C };
+export const SCENES: Scene[] = [
+  { name: 'sea', sky: [176, 204, 226], ground: [52, 98, 136], accents: [[214, 196, 160], [120, 168, 204], [235, 240, 242]] },
+  { name: 'forest', sky: [196, 210, 170], ground: [52, 82, 46], accents: [[104, 138, 74], [30, 48, 30], [150, 120, 80]] },
+  { name: 'cafe', sky: [228, 214, 190], ground: [112, 80, 58], accents: [[196, 160, 120], [64, 44, 34], [244, 236, 220]] },
+  { name: 'night', sky: [22, 26, 48], ground: [44, 50, 78], accents: [[70, 60, 90], [30, 34, 40]], dots: [244, 186, 96] },
+  { name: 'blossom', sky: [242, 218, 222], ground: [150, 168, 112], accents: [[214, 152, 172], [250, 240, 238], [190, 120, 140]] },
+  { name: 'snow', sky: [214, 220, 228], ground: [238, 240, 242], accents: [[120, 126, 140], [180, 188, 200]] },
+  { name: 'autumn', sky: [222, 186, 120], ground: [150, 72, 40], accents: [[190, 112, 50], [92, 60, 40], [214, 160, 80]] },
+  { name: 'dusk', sky: [238, 162, 112], ground: [72, 60, 98], accents: [[182, 100, 120], [250, 200, 150]] },
+];
 
 export interface TruthCell {
   id: number;
@@ -146,7 +163,13 @@ export function buildProfile(o: ProfileOptions = {}): Profile {
   }
   p.rect(0, gridTop - Math.round(1 * S), 130 * S, Math.round(1 * S), ink);
 
-  // 그리드
+  // 그리드. 'natural'이면 같은 장면이 1~4장씩 이어진다 (같은 날의 기억)
+  const scenes: number[] = [];
+  while (scenes.length < nPosts) {
+    const sc = Math.floor(rnd() * SCENES.length);
+    const run = 1 + Math.floor(rnd() ** 1.6 * 4);
+    for (let k = 0; k < run; k++) scenes.push(sc);
+  }
   const cells: TruthCell[] = [];
   for (let id = 0; id < nPosts; id++) {
     const row = Math.floor(id / 3), col = id % 3;
@@ -155,9 +178,33 @@ export function buildProfile(o: ProfileOptions = {}): Profile {
     const cy = gridTop + row * (ch + g);
     cells.push({ id, x, y: cy, w, h: ch });
     if (o.placeholders?.includes(id)) p.rect(x, cy, w, ch, soft);
+    else if (o.style === 'natural') paintScene(p, x, cy, w, ch, rnd, SCENES[scenes[id]]);
     else paintPhoto(p, x, cy, w, ch, rnd, id, dark);
   }
   return { raster: r, scale: S, gridTop, cells, dark };
+}
+
+function paintScene(p: Painter, x: number, y: number, w: number, h: number, rnd: () => number, sc: Scene) {
+  const { data, width: W } = p.r;
+  const jitter = (c: C, a: number): C => c.map((v) => v + (rnd() - 0.5) * a) as C;
+  const sky = jitter(sc.sky, 24), ground = jitter(sc.ground, 24);
+  const horizon = h * (0.35 + rnd() * 0.3);
+  const blobs = Array.from({ length: 2 + Math.floor(rnd() * 3) }, () => ({
+    x: rnd() * w, y: horizon + (rnd() - 0.3) * h * 0.5, r: (0.08 + rnd() * 0.22) * w,
+    c: jitter(sc.accents[Math.floor(rnd() * sc.accents.length)], 20),
+  }));
+  const dots = sc.dots ? Array.from({ length: 30 }, () => ({ x: rnd() * w, y: rnd() * h, r: 2 + rnd() * 6 })) : [];
+  for (let yy = 0; yy < h; yy++) {
+    for (let xx = 0; xx < w; xx++) {
+      const t = yy < horizon ? yy / horizon : 1;
+      let c: number[] = yy < horizon ? sky.map((v, k) => v * (1 - t * 0.25) + ground[k] * t * 0.25) : ground.map((v) => v * (0.9 + 0.2 * ((yy - horizon) / h)));
+      for (const b of blobs) if ((xx - b.x) ** 2 + (yy - b.y) ** 2 < b.r ** 2) c = b.c;
+      if (sc.dots) for (const d of dots) if ((xx - d.x) ** 2 + (yy - d.y) ** 2 < d.r ** 2) c = sc.dots;
+      const n = (rnd() - 0.5) * 12;
+      const i = ((y + yy) * W + x + xx) * 4;
+      data[i] = c[0] + n; data[i + 1] = c[1] + n; data[i + 2] = c[2] + n; data[i + 3] = 255;
+    }
+  }
 }
 
 function paintPhoto(p: Painter, x: number, y: number, w: number, h: number, rnd: () => number, id: number, dark: boolean) {

@@ -6,7 +6,7 @@
 
 ```sh
 npm install
-npm run dev        # http://localhost:5173/debug.html
+npm run dev        # http://localhost:5173/debug.html, /quilt.html
 npm test           # 그리드 감지 단위 테스트
 npm run fixtures   # 합성 캡처 PNG/PDF 만들기 (fixtures/out)
 npm run e2e        # 브라우저에서 파일 올려 확인
@@ -21,6 +21,11 @@ npm run build      # dist/ 정적 사이트
 | `src/grid` | 여백선 감지, 줄 분류, 칸 자르기, 캡처 이어 붙이기 (DOM 없음) | 1 |
 | `src/synth` | 검증용 가짜 인스타 프로필 캡처 | 1 |
 | `src/debug` | 1단계 확인 화면 | 1 |
-| 색·질감 추출, 레이아웃, 렌더링, 인터랙션 | | 2~4 |
+| `src/color` | k-means 대표 색, 느낌 → 천(모시·삼베·명주) | 2 |
+| `src/layout` | 기억의 무게, 불규칙 조각보 분할 | 2 |
+| `src/render` | 천 짜기(노이즈), 조각보·솔기 그리기 | 2 |
+| `src/quilt` | 2단계 조각보 화면 | 2 |
+| 인터랙션 | | 3 |
 
-1단계 설명과 실패 사례 처리: [docs/stage-1-grid.md](docs/stage-1-grid.md)
+- 1단계 설명과 실패 사례 처리: [docs/stage-1-grid.md](docs/stage-1-grid.md)
+- 2단계 메커니즘과 이유: [docs/stage-2-quilt.md](docs/stage-2-quilt.md)
